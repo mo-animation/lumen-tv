@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Lumen trailer</title>
+<!-- Lumen shows trailers in a window inside the app. The TV app runs from file://, which sends YouTube no
+     referrer (Error 153), so the player lives on this https page and Lumen embeds it.
+     Messages: Lumen → page {lumen:'toggle'|'seek', s}; page → Lumen {lumen:'ready'|'playing'|'paused'|'ended'|'error'|'muted'} -->
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #p { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+</style>
+</head>
+<body>
+<div id="p"></div>
+<script>
+  var id = (location.search.match(/[?&]v=([\w-]{6,20})/) || [])[1], player, started = false;
+  function tell(m) { try { parent.postMessage({ lumen: m }, '*'); } catch (e) { } }
+  if (!id) tell('error');
+  window.onYouTubeIframeAPIReady = function () {
+    player = new YT.Player('p', {
+      videoId: id, width: '100%', height: '100%',
+      playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3, fs: 0, disablekb: 1 },
+      events: {
+        onReady: function () {
+          tell('ready'); player.playVideo();
+          /* if the TV blocks autoplay with sound, start muted; Lumen asks for OK to unmute */
+          setTimeout(function () { if (!started) { player.mute(); player.playVideo(); tell('muted'); } }, 2500);
+        },
+        onStateChange: function (e) {
+          if (e.data === 1) { started = true; tell('playing'); }
+          else if (e.data === 2) tell('paused');
+          else if (e.data === 0) tell('ended');
+        },
+        onError: function () { tell('error'); }
+      }
+    });
+  };
+  window.addEventListener('message', function (e) {
+    var d = e.data || {}; if (!player || !player.getPlayerState) return;
+    if (d.lumen === 'toggle') {
+      if (player.isMuted()) { player.unMute(); player.setVolume(100); tell('playing'); return; }
+      if (player.getPlayerState() === 1) player.pauseVideo(); else player.playVideo();
+    } else if (d.lumen === 'seek') player.seekTo(Math.max(0, player.getCurrentTime() + (d.s || 0)), true);
+  });
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
