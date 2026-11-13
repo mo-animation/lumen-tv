@@ -3,7 +3,7 @@
   'use strict';
   var L = window.L = {};
 
-  L.K = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 461, PLAY: 415, PAUSE: 19, STOP: 413, FF: 417, RW: 412, CHUP: 33, CHDN: 34 };
+  L.K = { LEFT: 37, UP: 38, RIGHT: 39, DOWN: 40, OK: 13, BACK: 461, PLAY: 415, PAUSE: 19, PP: 10252, STOP: 413, FF: 417, RW: 412, CHUP: 33, CHDN: 34 };
   L.scale = 1;
 
   L.h = function (tag, cls, kids) {
@@ -193,10 +193,46 @@
       return true;
     } catch (e) { if (cb) cb(null); return false; }
   };
+  /* ---- platform: LG webOS, Samsung Tizen, Android TV (WebView shell), or a plain browser ---- */
+  L.platform = window.LumenNative ? 'android' : window.tizen ? 'tizen' : (window.PalmSystem || window.webOS || window.PalmServiceBridge) ? 'webos' : 'web';
+  if (L.platform === 'tizen') {
+    try {
+      ['MediaPlay', 'MediaPause', 'MediaPlayPause', 'MediaStop', 'MediaFastForward', 'MediaRewind', 'ChannelUp', 'ChannelDown']
+        .forEach(function (n) { try { tizen.tvinputdevice.registerKey(n); } catch (e) { } });
+    } catch (e) { }
+  }
+  /* turn each platform's remote codes into the app's own codes */
+  L.mapKey = function (k) {
+    switch (k) {
+      case 10009: case 27: return K.BACK;              /* Samsung Return, Esc */
+      case 427: return K.CHUP; case 428: return K.CHDN; /* Samsung channel keys */
+      case 10252: case 179: return K.PP;                /* play/pause toggle (Samsung, Android) */
+      default: return k;
+    }
+  };
+  L.exit = function () {
+    try {
+      if (L.platform === 'android') return window.LumenNative.exit();
+      if (L.platform === 'tizen') return tizen.application.getCurrentApplication().exit();
+    } catch (e) { }
+    window.close();
+  };
+
   /* trailers open in the TV's YouTube app; Back returns here */
   L.trailer = function (id) {
+    var web = 'https://www.youtube.com/watch?v=' + id;
+    if (L.platform === 'android') { try { window.LumenNative.openUrl(web); } catch (e) { L.toast(L.t('no_yt')); } return; }
+    if (L.platform === 'tizen') {
+      try {
+        var ctl = new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', web);
+        tizen.application.launchAppControl(ctl, '111299001912', null, function () {
+          try { tizen.application.launchAppControl(ctl, null, null, function () { L.toast(L.t('no_yt')); }); } catch (e) { L.toast(L.t('no_yt')); }
+        });
+      } catch (e) { L.toast(L.t('no_yt')); }
+      return;
+    }
     var ok = L.luna('luna://com.webos.applicationManager/launch', { id: 'youtube.leanback.v4', params: { contentTarget: 'https://www.youtube.com/tv?v=' + id } },
       function (r) { if (!r || r.returnValue === false) L.toast(L.t('no_yt')); });
-    if (!ok) { try { window.open('https://www.youtube.com/watch?v=' + id, '_blank'); } catch (e) { } }
+    if (!ok) { try { window.open(web, '_blank'); } catch (e) { } }
   };
 })();

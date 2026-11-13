@@ -35,12 +35,25 @@ fs.copyFileSync(path.join(tmp, ipk), path.join(out, 'lumen.ipk'));
 fs.writeFileSync(path.join(out, 'version.txt'), v.version + '\n');
 console.log(`release/lumen.ipk -> v${v.version}`);
 
+/* Samsung (Tizen) package, unsigned: the Samsung step signs it with the TV owner's certificate */
+{
+  const t = path.join(tmp, 'tizen'); fs.mkdirSync(t, { recursive: true });
+  fs.cpSync(app, t, { recursive: true, filter: f => !/appinfo\.json$|config\.local\.js$/.test(f) });
+  fs.writeFileSync(path.join(t, 'config.local.js'.replace(/^/, 'js/')), '/* none */\n');
+  fs.writeFileSync(path.join(t, 'config.xml'), fs.readFileSync(path.join(root, 'tizen', 'config.xml'), 'utf8').replace('VERSION', v.version));
+  const w = path.join(out, 'lumen.wgt'); fs.rmSync(w, { force: true });
+  cp.execFileSync('zip', ['-q', '-r', '-X', w, '.'], { cwd: t });
+  console.log('release/lumen.wgt (unsigned)');
+}
+const pj = path.join(root, 'package.json');
+if (fs.existsSync(pj)) { const p = JSON.parse(fs.readFileSync(pj, 'utf8')); if (p.version !== v.version) { p.version = v.version; fs.writeFileSync(pj, JSON.stringify(p, null, 2) + '\n'); } }
+
 /* installers as zips: a zip keeps the Mac script's run permission after download */
 if (process.platform !== 'win32') {
   const inst = path.join(root, 'installers');
   for (const [file, zip] of [['Lumen Installer (Mac).command', 'Lumen-Installer-Mac.zip'], ['Lumen Installer (Windows).bat', 'Lumen-Installer-Windows.zip']]) {
     const z = path.join(out, zip); fs.rmSync(z, { force: true });
-    cp.execFileSync('zip', ['-q', '-X', '-j', z, path.join(inst, file)]);
+    cp.execFileSync('zip', ['-q', '-X', '-j', z, path.join(inst, file), path.join(inst, 'lumen-install.js')]);
   }
   console.log('release/Lumen-Installer-Mac.zip, release/Lumen-Installer-Windows.zip');
 }

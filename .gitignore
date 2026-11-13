@@ -1,6 +1,7 @@
-.tools/
-dist/
-.tv-ip
-.claude/
-app/js/config.local.js
 .DS_Store
+.claude/
+.tools/
+.tv-ip
+app/js/config.local.js
+dist/
+signing/

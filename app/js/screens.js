@@ -77,7 +77,7 @@
     rootScope = {
       root: main, onBack: function () {
         if (!A.mode) {
-          if (Date.now() - exitT < 2500) window.close();
+          if (Date.now() - exitT < 2500) L.exit();
           else { exitT = Date.now(); L.toast(t('exit_again')); }
         } else if (!nav.contains(N.cur)) { var s = A.tabs[A.tab]; if (s.back && s.back()) return; N.focus(btn[A.tab]); }
         else A.home();

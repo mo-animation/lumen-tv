@@ -155,6 +155,7 @@
       case K.OK: if (o.live) showHud(); else toggle(); break;
       case K.PLAY: if (v && v.paused) toggle(); else showHud(); break;
       case K.PAUSE: if (v && !v.paused && !o.live) toggle(); break;
+      case K.PP: if (o.live) showHud(); else toggle(); break;
       case K.LEFT: o.live ? showHud() : seek(-1); break;
       case K.RIGHT: o.live ? showHud() : seek(1); break;
       case K.RW: seek(-1, true); break;

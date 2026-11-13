@@ -107,10 +107,10 @@
   N.act = function (el) { if (el && el._act) el._act(); };
 
   var okEl = null, okTimer = null, okLong = false;
-  document.addEventListener('keydown', function (e) {
-    var k = e.keyCode, t = top(); if (!t) return;
+  function onKeyDown(e) {
+    var k = L.mapKey(e.keyCode), t = top(); if (!t) return;
     var ae = document.activeElement, typing = ae && ae.tagName === 'INPUT';
-    if (k === 27 || (k === 8 && !typing)) k = K.BACK;
+    if (k === 8 && !typing) k = K.BACK;
     if (typing) {
       if (k === K.OK || k === K.DOWN || k === K.UP || k === K.BACK) {
         e.preventDefault(); ae.blur();
@@ -130,7 +130,10 @@
       return;
     }
     if (k === K.BACK) { e.preventDefault(); if (t.onBack) t.onBack(); }
-  });
+  }
+  document.addEventListener('keydown', onKeyDown);
+  /* lets a native shell (Android) deliver keys it intercepts, like Back */
+  N.press = function (k) { onKeyDown({ keyCode: k, repeat: false, preventDefault: function () { } }); };
   document.addEventListener('keyup', function (e) {
     if (e.keyCode !== K.OK || !okEl) return;
     clearTimeout(okTimer);
