@@ -1,10 +1,19 @@
 {
   "name": "lumen-tv",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Lumen - a fast IPTV front end for TVs",
   "packageType": "app",
   "appName": "Lumen",
   "appPath": "app/index.html",
-  "keys": ["MediaPlay", "MediaPause", "MediaPlayPause", "MediaStop", "MediaFastForward", "MediaRewind", "ChannelUp", "ChannelDown"],
+  "keys": [
+    "MediaPlay",
+    "MediaPause",
+    "MediaPlayPause",
+    "MediaStop",
+    "MediaFastForward",
+    "MediaRewind",
+    "ChannelUp",
+    "ChannelDown"
+  ],
   "private": true
 }
