@@ -1,38 +1,48 @@
-name: Build TV packages
+name: Release to TVs
+# Every push that changes the app becomes a new version: the version number goes up, the over-the-air
+# update (update/) and all TV packages (release/) are rebuilt, and installed TVs pick it up on their own.
 on:
   push:
     branches: [main]
-    paths: ['app/**', 'android/**', 'release/lumen.wgt', 'release/lumen.ipk', '.github/workflows/build.yml']
+    paths: ['app/**', 'android/**', 'tizen/**', 'installers/**', 'tools/**', '.github/workflows/build.yml']
   workflow_dispatch:
 permissions:
   contents: write
-concurrency: build
+concurrency: release
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: '17' }
-      - name: Build Android APK
+      - name: LG packaging tools
+        run: |
+          mkdir -p .tools && cd .tools
+          echo '{"name":"tools","private":true}' > package.json
+          npm install @webos-tools/cli --no-audit --no-fund --loglevel=error
+      - name: New version, update bundle, LG and Samsung packages, installers
+        run: node tools/build.js --bump
+      - name: Android APK
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASS }}
         run: |
           echo "$KS_B64" | base64 -d > "$RUNNER_TEMP/ks.p12"
           KS_FILE="$RUNNER_TEMP/ks.p12" bash android/build.sh
-      - name: Save APK to the repo
+      - name: Publish to the repo (TVs update from here)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add release/lumen.apk
-          git diff --cached --quiet || { git commit -q -m "Build Android APK [skip ci]"; git push -q; }
-      - name: Publish GitHub release (LG, Samsung, Android packages)
+          git add app/js/version.js app/appinfo.json package.json update release
+          V="$(cat release/version.txt)"
+          git commit -q -m "Release v$V [skip ci]"
+          git push -q
+      - name: GitHub release page
         env: { GH_TOKEN: '${{ github.token }}' }
         run: |
           V="v$(cat release/version.txt)"
-          if gh release view "$V" >/dev/null 2>&1; then
-            gh release upload "$V" release/lumen.apk release/lumen.wgt release/lumen.ipk --clobber
-          else
-            gh release create "$V" release/lumen.apk release/lumen.wgt release/lumen.ipk --title "Lumen $V" --notes "Install with the Lumen installer (release folder in the repo)." --latest
-          fi
+          gh release create "$V" release/lumen.apk release/lumen.wgt release/lumen.ipk --title "Lumen $V" \
+            --notes "Installed TVs update automatically. New TVs: use the installer in the release folder." --latest

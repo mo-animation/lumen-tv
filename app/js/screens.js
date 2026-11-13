@@ -88,6 +88,7 @@
   A.home = function () {
     A.mode = null; view.style.display = 'none'; nav.style.display = 'none'; launch.style.display = '';
     N.focus(N.vis(launch._last) ? launch._last : launch._first);
+    if (A.updateReady) setTimeout(applyUpdate, 300);
   };
   A.enter = function (mode, tab) {
     launch._last = N.cur && launch.contains(N.cur) ? N.cur : launch._first;
@@ -336,10 +337,29 @@
       v.textContent = t('installing'); setTimeout(function () { location.reload(); }, 700);
     }).catch(function () { v.textContent = t('upd_fail'); });
   }
-  function hintUpdate() {
+  /* automatic updates: checked at start, when the app comes back to the screen, and every 2 hours.
+     A new version is downloaded quietly; it switches over at once if you're on the start screen,
+     otherwise the next time you return to it (never in the middle of watching). */
+  var updBusy = false;
+  A.updateReady = false;
+  function idle() { return !A.mode && !L.player.on && N.top() === rootScope; }
+  function applyUpdate() { if (A.updateReady && idle()) { L.toast(t('installing')); setTimeout(function () { location.reload(); }, 900); } }
+  function autoUpdate() {
+    if (updBusy || A.updateReady) return;
     var u = updUrl('version.json'); if (!u) return;
-    fetch(u).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) { if (b && b.build > running()) L.toast(t('upd_avail')); }).catch(noop);
+    updBusy = true;
+    fetch(u).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
+      if (!v || !(v.build > running())) return;
+      return fetch(updUrl('bundle.json')).then(function (r) { return r.ok ? r.json() : null; }).then(function (b) {
+        if (!b || !b.js || !b.css || !(b.build > running())) return;
+        localStorage.setItem('lm.update', JSON.stringify(b));
+        A.updateReady = true; applyUpdate();
+      });
+    }).catch(noop).then(function () { updBusy = false; });
   }
+  A.applyUpdate = applyUpdate;
+  setInterval(autoUpdate, 2 * 3600 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(autoUpdate, 1500); });
 
   /* ================= settings ================= */
   BUILD.settings = function () {
@@ -496,7 +516,7 @@
 
   function boot(p) {
     D.init(p); shell(); A.home();
-    setTimeout(hintUpdate, 4000);
+    setTimeout(autoUpdate, 3000);
   }
   var prof = L.store.get('profile', null);
   if (prof) boot(prof); else setup();

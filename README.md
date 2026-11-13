@@ -22,8 +22,11 @@ The installer needs Node.js and offers to install it if missing.
 
 ## Updates
 
-After the first install, updates come from this repo: on the TV open **Settings → Check for updates**.
-To publish: change files in `app/`, then run `Publish update.command` (Mac). GitHub Actions builds the Android APK and the release.
+Installed TVs update themselves. Every push to `main` that changes the app is built by GitHub Actions into a new version
+(`update/` for over-the-air updates, `release/` for installers). TVs check at start, when Lumen comes back on screen and every
+2 hours, download quietly, and switch over on the start screen (never during playback). *Settings → Check for updates* forces a check.
+
+Over-the-air updates change the app's code and look. Changing the icon, name or native shell needs a reinstall with the installer.
 
 ---
 
@@ -34,4 +37,4 @@ installer واحد لكل الشاشات: بيسأل على IP الشاشة، ي
 - **ماك:** نزّل `Lumen-Installer-Mac.zip`، فك الضغط، كليك يمين ← Open.
 - **ويندوز:** نزّل `Lumen-Installer-Windows.zip`، فك الضغط، دبل كليك على ملف `.bat`.
 
-التحديثات بعد كده من جوه التطبيق: الإعدادات ← البحث عن تحديثات.
+التحديثات بتوصل للشاشات لوحدها: أي تعديل يترفع على GitHub بيتبني تلقائياً، والشاشات بتنزّله وتطبّقه وهي على شاشة البداية.
