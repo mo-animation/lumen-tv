@@ -1,0 +1,6 @@
+.tools/
+dist/
+.tv-ip
+.claude/
+app/js/config.local.js
+.DS_Store
