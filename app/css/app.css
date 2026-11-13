@@ -244,3 +244,10 @@ svg { display: block; fill: currentColor; }
 .segb.focus { background: #fff; color: var(--ink); }
 .has-seg .side-vp { top: 220px; height: 860px; }
 .rtl .seg { left: auto; right: 80px; }
+
+/* trailer window */
+.trailer { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: rgba(0,0,0,.72); z-index: 25; }
+.trwin { position: absolute; left: 320px; top: 160px; width: 1280px; height: 720px; border-radius: 28px; overflow: hidden; background: #000; box-shadow: var(--edge), 0 30px 80px rgba(0,0,0,.6); }
+.trwin iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
+.trcover { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 2; box-shadow: var(--edge); border-radius: 28px; }
+.trhint { position: absolute; left: 0; right: 0; top: 920px; text-align: center; font-size: 26px; color: rgba(255,255,255,.75); }

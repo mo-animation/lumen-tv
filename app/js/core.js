@@ -150,7 +150,7 @@
       refresh: 'Refresh library', refresh_sub: 'Reload channels and titles', refreshing: 'Refreshing…', clear_hist: 'Clear watch history', cleared: 'Cleared',
       signout: 'Sign out', signout_sub: 'Switch provider', version: 'Version',
       resume_from: 'Resume from ', start_over: 'Start Over', in_list: 'In My List', trailer: 'Trailer', season: 'Season ', episode: 'Episode ', no_eps: 'No episodes available', cast: 'Cast: ',
-      added: 'Added to My List', removed: 'Removed from My List', exit_again: 'Press Back again to exit', no_yt: 'Could not open YouTube',
+      added: 'Added to My List', removed: 'Removed from My List', exit_again: 'Press Back again to exit', no_yt: 'Could not open YouTube', tr_sound: 'Press OK for sound', tr_hint: 'OK pause · ◀ ▶ 10s · Back close',
       s_title: 'Connect your provider', s_text: 'Enter your Xtream Codes server with username and password, or paste an M3U playlist link and leave the other two fields empty.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'Connect', demo: 'Try the demo', connecting: 'Connecting…', need_url: 'Enter the server address first', conn_fail: 'Could not connect',
       now: 'Now: ', next: 'Next: ', ch_hint: '▲▼ Change channel', vod_hint: '◀ ▶ Seek   ·   OK Play / Pause   ·   ▲ Audio   ▼ Subtitles',
@@ -173,7 +173,7 @@
       refresh: 'تحديث المكتبة', refresh_sub: 'إعادة تحميل القنوات والعناوين', refreshing: 'جاري التحديث…', clear_hist: 'مسح سجل المشاهدة', cleared: 'تم المسح',
       signout: 'تسجيل الخروج', signout_sub: 'تغيير المزوّد', version: 'الإصدار',
       resume_from: 'متابعة من ', start_over: 'من البداية', in_list: 'في قائمتي', trailer: 'تريلر', season: 'الموسم ', episode: 'الحلقة ', no_eps: 'لا توجد حلقات', cast: 'بطولة: ',
-      added: 'أُضيف إلى قائمتي', removed: 'أُزيل من قائمتي', exit_again: 'اضغط رجوع مرة أخرى للخروج', no_yt: 'تعذّر فتح يوتيوب',
+      added: 'أُضيف إلى قائمتي', removed: 'أُزيل من قائمتي', exit_again: 'اضغط رجوع مرة أخرى للخروج', no_yt: 'تعذّر فتح يوتيوب', tr_sound: 'اضغط OK لتشغيل الصوت', tr_hint: 'OK إيقاف مؤقت · ◀ ▶ ١٠ ثوانٍ · رجوع للإغلاق',
       s_title: 'اتصل بمزوّد الخدمة', s_text: 'أدخل سيرفر Xtream Codes مع اسم المستخدم وكلمة المرور، أو الصق رابط M3U واترك الحقلين الآخرين فارغين.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'اتصال', demo: 'جرّب النسخة التجريبية', connecting: 'جاري الاتصال…', need_url: 'أدخل عنوان السيرفر أولاً', conn_fail: 'تعذّر الاتصال',
       now: 'الآن: ', next: 'التالي: ', ch_hint: '▲▼ تغيير القناة', vod_hint: '◀ ▶ تقديم   ·   OK تشغيل / إيقاف   ·   ▲ الصوت   ▼ الترجمة',
@@ -218,8 +218,8 @@
     window.close();
   };
 
-  /* trailers open in the TV's YouTube app; Back returns here */
-  L.trailer = function (id) {
+  /* fallback when a trailer can't play inside Lumen: open it in the TV's YouTube app; Back returns here */
+  L.trailerApp = function (id) {
     var web = 'https://www.youtube.com/watch?v=' + id;
     if (L.platform === 'android') { try { window.LumenNative.openUrl(web); } catch (e) { L.toast(L.t('no_yt')); } return; }
     if (L.platform === 'tizen') {

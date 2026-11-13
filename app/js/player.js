@@ -187,3 +187,67 @@
     if (document.hidden) { if (!o.live) { v.pause(); save(); } else P.close(); }
   });
 })();
+
+/* Trailer window: plays the YouTube trailer in a small window in the middle of the screen.
+   YouTube refuses embeds from file:// pages, so the player is docs/trailer.html on GitHub Pages.
+   If it can't play here (offline, embedding blocked), the trailer opens in the TV's YouTube app instead. */
+(function () {
+  'use strict';
+  var L = window.L, K = L.K, N = L.nav, h = L.h;
+  var HOST = 'https://' + (window.LUMEN_CFG.repo || '').split('/')[0] + '.github.io';
+  var PAGE = HOST + '/' + (window.LUMEN_CFG.repo || '').split('/')[1] + '/trailer.html?v=';
+  var el, frame, hint, timer, id, open = false;
+
+  function send(m, s) { try { frame.contentWindow.postMessage({ lumen: m, s: s }, HOST); } catch (e) { } }
+  function close() {
+    if (!open) return;
+    open = false; clearTimeout(timer);
+    frame.src = 'about:blank';
+    el.parentNode.removeChild(el);
+    N.pop();
+  }
+  function fallback() { var v = id; close(); L.trailerApp(v); }
+
+  window.addEventListener('message', function (e) {
+    if (!open || e.origin !== HOST || !e.data) return;
+    var m = e.data.lumen;
+    if (m === 'ready') clearTimeout(timer);
+    else if (m === 'error') fallback();
+    else if (m === 'ended') close();
+    else if (m === 'muted') hint.textContent = L.t('tr_sound');
+    else if (m === 'playing') hint.textContent = L.t('tr_hint');
+  });
+
+  L.trailer = function (vid) {
+    if (open) return;
+    if (!el) {
+      el = h('div', 'trailer');
+      var win = h('div', 'trwin glass');
+      frame = h('iframe');
+      frame.setAttribute('allow', 'autoplay; encrypted-media');
+      frame.setAttribute('tabindex', '-1');
+      /* a cover over the video keeps clicks and key presses in Lumen (the remote's Back must reach us) */
+      win.appendChild(frame); win.appendChild(h('div', 'trcover'));
+      hint = h('div', 'trhint');
+      el.appendChild(win); el.appendChild(hint);
+    }
+    id = vid; open = true;
+    hint.textContent = L.t('tr_hint');
+    document.getElementById('app').appendChild(el);
+    frame.src = PAGE + encodeURIComponent(vid);
+    N.push({
+      root: el, onBack: close,
+      onClick: function () { send('toggle'); },
+      onKey: function (k, e) {
+        if (k === K.BACK) return false;
+        if (e.repeat && k === K.OK) return true;
+        if (k === K.OK || k === K.PP || k === K.PLAY || k === K.PAUSE) send('toggle');
+        else if (k === K.RIGHT || k === K.FF) send('seek', 10);
+        else if (k === K.LEFT || k === K.RW) send('seek', -10);
+        else if (k === K.STOP) close();
+        return true;
+      }
+    });
+    timer = setTimeout(fallback, 12000); /* the player never answered: no internet or page unreachable */
+  };
+})();
