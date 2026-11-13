@@ -52,7 +52,7 @@
     del: function (k) { try { localStorage.removeItem('lm.' + k); } catch (e) { } }
   };
 
-  function slim(it) { return { t: it.t, id: it.id, n: it.n, i: it.i, c: it.c, e: it.e, u: it.u, eps: it.t === 'series' ? it.eps : undefined }; }
+  function slim(it) { return { t: it.t, id: it.id, n: it.n, i: it.i, c: it.c, e: it.e, u: it.u, eps: it.t === 'series' ? it.eps : undefined, tmid: it.tmid }; }
 
   var favs = null;
   L.fav = {
@@ -138,6 +138,7 @@
       choose: 'What would you like to watch?', l_live_sub: 'Channels, news and sports', l_vod: 'Movies & TV Shows', l_vod_sub: 'Your on-demand library',
       play: 'Play', resume: 'Resume', episodes: 'Episodes', more_info: 'More Info', new_movies: 'New in Movies', new_series: 'New in TV Shows',
       loading_lib: 'Loading your library…', lib_fail: 'Could not load your library. Check the connection in Settings.',
+      tm_trending: 'Trending This Week', tm_popular: 'Popular', tm_top_rated: 'Top Rated', tm_now_playing: 'Now Playing', tm_on_the_air: 'On the Air', tm_none: 'None of these titles are on your server', tm_loading: 'Matching TMDB with your server…',
       cw: 'Continue Watching', recent_movies: 'Recently Added Movies', recent_series: 'Recently Added TV Shows',
       all_channels: 'All Channels', favorites: '★ Favorites', all_movies: 'All Movies', all_series: 'All TV Shows',
       nothing: 'Nothing here yet', hold_ch: 'No channels here. Hold OK on a channel to add it to Favorites.', hold_any: 'Nothing here yet. Hold OK on any title to add it.',
@@ -160,6 +161,7 @@
       choose: 'تحب تشوف إيه؟', l_live_sub: 'قنوات، أخبار ورياضة', l_vod: 'أفلام ومسلسلات', l_vod_sub: 'مكتبتك حسب الطلب',
       play: 'تشغيل', resume: 'متابعة', episodes: 'الحلقات', more_info: 'التفاصيل', new_movies: 'جديد الأفلام', new_series: 'جديد المسلسلات',
       loading_lib: 'جاري تحميل مكتبتك…', lib_fail: 'تعذّر تحميل المكتبة. راجع الاتصال من الإعدادات.',
+      tm_trending: 'الأكثر رواجاً هذا الأسبوع', tm_popular: 'الأشهر', tm_top_rated: 'الأعلى تقييماً', tm_now_playing: 'يُعرض الآن', tm_on_the_air: 'يُعرض حالياً', tm_none: 'لا يوجد من هذه العناوين على السيرفر', tm_loading: 'جاري مطابقة TMDB مع السيرفر…',
       cw: 'متابعة المشاهدة', recent_movies: 'أفلام مضافة حديثاً', recent_series: 'مسلسلات مضافة حديثاً',
       all_channels: 'كل القنوات', favorites: '★ المفضلة', all_movies: 'كل الأفلام', all_series: 'كل المسلسلات',
       nothing: 'لا يوجد شيء هنا', hold_ch: 'لا توجد قنوات. اضغط مطوّلاً على OK لإضافة قناة للمفضلة.', hold_any: 'لا يوجد شيء بعد. اضغط مطوّلاً على OK للإضافة.',

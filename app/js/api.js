@@ -117,6 +117,61 @@
     return { q: q || name, y: y };
   };
   function tm(path, q) { return req('https://api.themoviedb.org/3' + path + '?api_key=' + enc(TM.key()) + (q || ''), false, 8000); }
+  /* ---- TMDB lists (trending, top rated, genres...) shown only where the title exists on the IPTV server ---- */
+  var LIST_TTL = 24 * 3600 * 1000;
+  TM.norm = function (name) { return TM.clean(String(name || '')).q.toLowerCase().replace(/&/g, 'and').replace(/[^\p{L}\p{N}]+/gu, ''); };
+  function index(t) {
+    var f = D.full[t]; if (!f) return {};
+    if (f.ix) return f.ix;
+    var ix = {}, k;
+    for (var i = 0; i < f.items.length; i++) { k = TM.norm(f.items[i].n); if (k) (ix[k] || (ix[k] = [])).push(f.items[i]); }
+    return (f.ix = ix);
+  }
+  TM.cats = function (t) {
+    var type = t === 'vod' ? 'movie' : 'tv', lang = L.lang === 'ar' ? 'ar' : 'en-US';
+    var fixed = (t === 'vod' ? ['trending', 'popular', 'top_rated', 'now_playing'] : ['trending', 'popular', 'top_rated', 'on_the_air'])
+      .map(function (id) { return { id: id, name: L.t('tm_' + id) }; });
+    return memo('tg' + t + lang, function () {
+      return tm('/genre/' + type + '/list', '&language=' + lang).then(function (d) {
+        return fixed.concat(((d && d.genres) || []).map(function (g) { return { id: 'g' + g.id, name: g.name }; }));
+      }, function () { return fixed; });
+    });
+  };
+  TM.list = function (t, id) {
+    var type = t === 'vod' ? 'movie' : 'tv', path = '/' + type + '/' + id, q = '', pages = 10;
+    if (id === 'trending') path = '/trending/' + type + '/week';
+    else if (id.charAt(0) === 'g') { path = '/discover/' + type; q = '&with_genres=' + id.slice(1) + '&sort_by=popularity.desc&vote_count.gte=40'; pages = 15; }
+    var key = 'tml:' + t + ':' + id;
+    var raw = L.cache.get(key).then(function (c) {
+      if (c && c.v && Date.now() - c.ts < LIST_TTL) return c.v;
+      var reqs = [];
+      for (var p = 1; p <= pages; p++) reqs.push(tm(path, q + '&language=en-US&page=' + p).then(function (d) { return (d && d.results) || []; }, function () { return []; }));
+      return Promise.all(reqs).then(function (all) {
+        var out = [];
+        all.forEach(function (r) { r.forEach(function (x) { out.push({ id: x.id, n: x.title || x.name || '', o: x.original_title || x.original_name || '', y: String(x.release_date || x.first_air_date || '').slice(0, 4), p: x.poster_path || '' }); }); });
+        if (out.length) L.cache.set(key, out);
+        return out;
+      });
+    });
+    return Promise.all([raw, D.all(t)]).then(function (r) {
+      var ix = index(t), seen = {}, out = [];
+      r[0].forEach(function (x) {
+        var names = [x.n, x.o];
+        for (var j = 0; j < names.length; j++) {
+          var c = ix[TM.norm(names[j])]; if (!c) continue;
+          var pick = c.filter(function (it) { var y = TM.clean(it.n).y; return y && y === x.y; })[0] || c[0], k = L.key(pick);
+          if (!seen[k]) {
+            seen[k] = 1;
+            var copy = {}; for (var f in pick) copy[f] = pick[f];
+            copy.tmid = x.id; if (x.p) copy.i = 'https://image.tmdb.org/t/p/w342' + x.p;
+            out.push(copy);
+          }
+          break;
+        }
+      });
+      return out;
+    });
+  };
   TM.test = function (key) { return req('https://api.themoviedb.org/3/configuration?api_key=' + enc(key), false, 8000); };
   TM.fetch = function (it, inf) {
     var type = it.t === 'vod' ? 'movie' : 'tv', lang = L.lang === 'ar' ? 'ar' : 'en-US', c = TM.clean(it.n);
@@ -129,7 +184,7 @@
         return null;
       });
     }
-    var idp = inf && inf.tmdb && /^\d+$/.test(String(inf.tmdb)) ? Promise.resolve(inf.tmdb) : search(true);
+    var idp = it.tmid ? Promise.resolve(it.tmid) : inf && inf.tmdb && /^\d+$/.test(String(inf.tmdb)) ? Promise.resolve(inf.tmdb) : search(true);
     return idp.then(function (id) {
       if (!id) return { none: 1 };
       return tm('/' + type + '/' + id, '&language=' + lang + '&append_to_response=videos,credits&include_video_language=' + (lang === 'ar' ? 'ar,en,null' : 'en,null')).then(function (d) {

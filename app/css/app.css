@@ -236,3 +236,11 @@ svg { display: block; fill: currentColor; }
 #toast.on { opacity: 1; }
 .rtl #nav > .brand { left: auto; right: 80px; }
 .rtl .navr { right: auto; left: 80px; }
+
+/* IPTV / TMDB switch above the category list */
+.seg { position: absolute; left: 80px; top: 142px; width: 300px; height: 62px; padding: 5px; border-radius: 31px; display: flex; direction: ltr; }
+.segb { flex: 1; height: 52px; line-height: 52px; border-radius: 26px; text-align: center; font-size: 23px; font-weight: 600; letter-spacing: 1px; }
+.segb.on { background: var(--on); }
+.segb.focus { background: #fff; color: var(--ink); }
+.has-seg .side-vp { top: 220px; height: 860px; }
+.rtl .seg { left: auto; right: 80px; }

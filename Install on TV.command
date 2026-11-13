@@ -27,13 +27,6 @@ echo "$IP" > .tv-ip
 if "$BIN/ares-setup-device" -l 2>/dev/null | grep -q "^$DEV "; then MODE="-m"; else MODE="-a"; fi
 "$BIN/ares-setup-device" $MODE "$DEV" -i "username=prisoner" -i "host=$IP" -i "port=9922" >/dev/null || fail "Could not register the TV."
 
-if ! grep -q "LUMEN_CFG.tmdb" app/js/config.local.js 2>/dev/null; then
-  say_step "TMDB (optional)"
-  echo "Paste your TMDB API key (v3) for descriptions, posters and trailers. Press Enter to skip."
-  read -r -p "TMDB API key: " TK
-  if [[ "$TK" =~ ^[A-Za-z0-9]+$ ]]; then echo "window.LUMEN_CFG.tmdb = '$TK';" > app/js/config.local.js; fi
-fi
-
 say_step "Building the app package"
 rm -rf dist && mkdir -p dist
 "$BIN/ares-package" --no-minify app -o dist >/dev/null || fail "Packaging failed."

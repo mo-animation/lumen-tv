@@ -1,0 +1,3 @@
+*.bat -text
+*.ipk binary
+*.zip binary

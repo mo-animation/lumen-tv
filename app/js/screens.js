@@ -183,22 +183,25 @@
   function Browse(c) {
     var el = h('div', 'screen'), side = h('div', 'vs side fg'), title = h('div', 'b-title'), count = h('div', 'b-count'), host = h('div', 'b-grid');
     var load = h('div', 'b-load', [h('div', 'spin'), h('div', '', t('loading'))]);
-    el.appendChild(h('div', 'side-vp', side)); el.appendChild(title); el.appendChild(count); el.appendChild(host); el.appendChild(load);
+    var sideVp = h('div', 'side-vp', side);
+    el.appendChild(sideVp); el.appendChild(title); el.appendChild(count); el.appendChild(host); el.appendChild(load);
     title.dir = 'auto'; side._mt = 60; side._mb = 60;
     var cfg = c.kind === 'wide' ? L.GRID.wide() : L.GRID.poster(6);
     cfg.fill = function (e, it) { L.card.fill(e, it); };
     cfg.act = function (it, i, items) { L.open(it, items); };
     cfg.long = function (it, e) { L.longFav(it, e); };
-    var grid = new L.VGrid(host, cfg), tok = 0, sel = null, selEl = null;
+    var grid = new L.VGrid(host, cfg), tok = 0, sideTok = 0, sel = null, selEl = null;
+    var src = { sections: c.sections, cats: c.cats, load: c.load, empty: c.empty };
 
     function pick(cat, b) {
       if (sel === cat) return;
       sel = cat; if (selEl) selEl.classList.remove('on'); selEl = b; b.classList.add('on');
       title.textContent = cat.name; count.textContent = '';
-      var my = ++tok; grid.set([], ' '); load.style.display = 'block';
-      c.load(cat.id).then(function (items) {
+      var my = ++tok, s = src; grid.set([], ' ');
+      load.lastChild.textContent = s.loadMsg || t('loading'); load.style.display = 'block';
+      s.load(cat.id).then(function (items) {
         if (my !== tok) return;
-        load.style.display = 'none'; grid.set(items, c.empty || t('nothing'));
+        load.style.display = 'none'; grid.set(items, s.empty || t('nothing'));
         count.textContent = items.length ? items.length + t(c.kind === 'wide' ? 'n_channels' : 'n_titles') : '';
       }, function (e) {
         if (my !== tok) return;
@@ -210,8 +213,31 @@
       b._act = function () { pick(cat, b); };
       side.appendChild(b); return b;
     }
-    c.sections.forEach(function (s, i) { var b = add(s); if (!i) pick(s, b); });
-    if (c.cats) c.cats().then(function (list) { list.forEach(add); }, noop);
+    function fillSide(s) {
+      src = s; var my = ++sideTok;
+      side.textContent = ''; side._y = 0; side.style.transform = ''; side._last = null; sel = null; selEl = null;
+      s.sections.forEach(function (x, i) { var b = add(x); if (!i) pick(x, b); });
+      if (s.cats) s.cats().then(function (list) {
+        if (my !== sideTok) return;
+        list.forEach(function (x, i) { var b = add(x); if (!s.sections.length && !i) pick(x, b); });
+      }, noop);
+    }
+
+    /* IPTV / TMDB switch: TMDB only reorganises titles that exist on the server */
+    if (c.tmdb && L.tmdb.key()) {
+      var tsrc = { sections: [], cats: c.tmdb.cats, load: c.tmdb.load, empty: t('tm_none'), loadMsg: t('tm_loading') }, isrc = src;
+      var seg = h('div', 'seg glass fg'), bI = h('div', 'segb f on', 'IPTV'), bT = h('div', 'segb f', 'TMDB');
+      function use(s, b) {
+        if (src === s) return;
+        bI.classList.toggle('on', b === bI); bT.classList.toggle('on', b === bT);
+        fillSide(s);
+      }
+      bI._act = function () { use(isrc, bI); };
+      bT._act = function () { use(tsrc, bT); };
+      seg.appendChild(bI); seg.appendChild(bT);
+      el.appendChild(seg); el.classList.add('has-seg');
+    }
+    fillSide(src);
     return {
       el: el,
       first: function () { return host._enter() || selEl; },
@@ -229,10 +255,12 @@
       cats: function () { return D.cats('live'); }, load: function (id) { return id === '__fav' ? Promise.resolve(L.fav.list(true)) : D.list('live', id); } });
   };
   BUILD.movies = function () {
-    return Browse({ sections: [{ id: null, name: t('all_movies') }], cats: function () { return D.cats('vod'); }, load: function (id) { return D.list('vod', id); } });
+    return Browse({ sections: [{ id: null, name: t('all_movies') }], cats: function () { return D.cats('vod'); }, load: function (id) { return D.list('vod', id); },
+      tmdb: { cats: function () { return L.tmdb.cats('vod'); }, load: function (id) { return L.tmdb.list('vod', id); } } });
   };
   BUILD.series = function () {
-    return Browse({ sections: [{ id: null, name: t('all_series') }], cats: function () { return D.cats('series'); }, load: function (id) { return D.list('series', id); } });
+    return Browse({ sections: [{ id: null, name: t('all_series') }], cats: function () { return D.cats('series'); }, load: function (id) { return D.list('series', id); },
+      tmdb: { cats: function () { return L.tmdb.cats('series'); }, load: function (id) { return L.tmdb.list('series', id); } } });
   };
   BUILD.library = function () {
     var s = Browse({ reload: true, sections: [{ id: 'list', name: t('mylist') }, { id: 'cw', name: t('cw') }], empty: t('hold_any'),
