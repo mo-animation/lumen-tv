@@ -123,8 +123,17 @@ async function lg(ip, ready) {
     step(`Installing on the TV (${ip})`);
     if (!run(bin('ares-install'), ['--device', dev, ipk])) await fail('Install failed. Check that Dev Mode Status is ON and its session has time left.');
   }
+  /* Developer Mode switches off after ~50 hours and deletes Lumen. Renew it now and give Lumen the
+     session token so it renews the session by itself every time it is opened. */
+  const tok = (out(bin('ares-novacom'), ['--device', dev, '--run', 'cat /var/luna/preferences/devmode_enabled']).match(/[0-9a-f]{32,}/i) || [])[0];
+  const params = [];
+  if (tok) {
+    await new Promise(res => https.get('https://developer.lge.com/secure/ResetDevModeSession.dev?sessionToken=' + tok, r => { r.resume(); r.on('end', res); }).on('error', res));
+    params.push('--params', JSON.stringify({ lmDevToken: tok }));
+    note('Developer Mode will stay on: Lumen renews it whenever you open it.');
+  } else note(`${C.y}Could not read the Developer Mode session. Extend it in the Developer Mode app every couple of days, or Lumen gets removed.${C.x}`);
   step('Opening Lumen on the TV');
-  if (!run(bin('ares-launch'), ['--device', dev, APP_ID], { stdio: 'ignore' })) note("Installed. Open Lumen from the TV's app list.");
+  if (!run(bin('ares-launch'), ['--device', dev, APP_ID].concat(params), { stdio: 'ignore' })) note("Installed. Open Lumen from the TV's app list.");
 }
 
 /* ---------- Android TV / Google TV ---------- */

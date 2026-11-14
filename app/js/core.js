@@ -218,6 +218,26 @@
     window.close();
   };
 
+  /* LG Developer Mode turns itself off (and deletes Lumen) when its ~50-hour session runs out.
+     The installer hands Lumen the TV's session token at launch; Lumen renews the session whenever it is
+     opened or comes back on screen, so as long as Lumen is used every couple of days it never expires. */
+  (function () {
+    if (L.platform !== 'webos') return;
+    function take(raw) {
+      try { var p = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {}); if (p.lmDevToken) S.set('devtok', String(p.lmDevToken)); } catch (e) { }
+    }
+    function renew() {
+      var tok = S.get('devtok'); if (!tok) return;
+      if (Date.now() - S.get('devrenew', 0) < 3 * 3600 * 1000) return;
+      S.set('devrenew', Date.now());
+      new Image().src = 'https://developer.lge.com/secure/ResetDevModeSession.dev?sessionToken=' + encodeURIComponent(tok);
+    }
+    try { take(window.PalmSystem && window.PalmSystem.launchParams); } catch (e) { }
+    document.addEventListener('webOSRelaunch', function (e) { take(e.detail); renew(); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) renew(); });
+    setTimeout(renew, 5000);
+  })();
+
   /* fallback when a trailer can't play inside Lumen: open it in the TV's YouTube app; Back returns here */
   L.trailerApp = function (id) {
     var web = 'https://www.youtube.com/watch?v=' + id;

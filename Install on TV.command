@@ -44,8 +44,16 @@ if ! install_app; then
   install_app || fail "Install failed. Check Dev Mode Status is ON and the session has not expired."
 fi
 
+# Developer Mode switches off after ~50 hours and deletes Lumen: renew it and let Lumen keep renewing it
+TOK="$("$BIN/ares-novacom" --device "$DEV" --run "cat /var/luna/preferences/devmode_enabled" 2>/dev/null | grep -oiE '[0-9a-f]{32,}' | head -1)"
+PARAMS=()
+if [ -n "$TOK" ]; then
+  curl -fsS "https://developer.lge.com/secure/ResetDevModeSession.dev?sessionToken=$TOK" >/dev/null 2>&1
+  PARAMS=(--params "{\"lmDevToken\":\"$TOK\"}")
+fi
+
 say_step "Launching Lumen"
-"$BIN/ares-launch" --device "$DEV" "$APP_ID" || echo "Installed, but could not launch it. Open Lumen from the TV's app list."
+"$BIN/ares-launch" --device "$DEV" "$APP_ID" "${PARAMS[@]}" || echo "Installed, but could not launch it. Open Lumen from the TV's app list."
 
 printf "\n\033[1;32mDone. Lumen is on your TV.\033[0m\n"
 read -r -p "Press Enter to close." _
