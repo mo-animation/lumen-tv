@@ -276,7 +276,7 @@
 
   /* ---------------- Demo ---------------- */
   var HLS = 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8';
-  var MP4 = 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+  var MP4 = 'https://archive.org/download/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4';
   function Demo() {
     var A = ['Silent', 'Last', 'Blue', 'Broken', 'Golden', 'Hidden', 'Northern', 'Paper', 'Electric', 'Midnight', 'Crimson', 'Glass', 'Distant', 'Wild', 'Iron'];
     var B = ['Horizon', 'River', 'Kingdom', 'Signal', 'Garden', 'Harbor', 'Empire', 'Echo', 'Station', 'Orbit', 'Summer', 'Frontier', 'Letters', 'Tide', 'Mirage'];

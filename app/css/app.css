@@ -262,3 +262,17 @@ svg { display: block; fill: currentColor; }
 .trwin iframe { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
 .trcover { position: absolute; left: 0; top: 0; right: 0; bottom: 0; z-index: 2; box-shadow: var(--edge); border-radius: 28px; }
 .trhint { position: absolute; left: 0; right: 0; top: 920px; text-align: center; font-size: 26px; color: rgba(255,255,255,.75); }
+
+/* player buttons and the "Next episode" card */
+.hud-bot { height: 360px; padding-top: 120px; }
+.hud-btns { display: flex; margin-top: 18px; height: 56px; }
+.pbtn { height: 56px; line-height: 56px; padding: 0 28px; margin-right: 16px; border-radius: 28px; font-size: 23px; font-weight: 600; background: rgba(255,255,255,.14); box-shadow: inset 1.5px 1.5px 0 rgba(255,255,255,.35); white-space: nowrap; }
+.pbtn.off { opacity: .35; }
+.pbtn.focus { background: #fff; color: #0b0f18; transform: scale(1.06); }
+.upn { position: absolute; right: 80px; bottom: 90px; width: 520px; padding: 26px 30px 30px; border-radius: 26px; background: rgba(18,22,32,.86); box-shadow: inset 1.5px 1.5px 0 rgba(255,255,255,.4), inset -1px -1px 0 rgba(255,255,255,.12), 0 20px 50px rgba(0,0,0,.5); opacity: 0; transform: translate3d(0,20px,0); transition: opacity .25s, transform .25s; }
+.upn.on { opacity: 1; transform: translate3d(0,0,0); }
+.upn-l { font-size: 20px; letter-spacing: 1.5px; text-transform: uppercase; opacity: .7; }
+.upn-t { font-size: 26px; font-weight: 600; margin: 8px 0 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.upn-b { position: relative; height: 64px; border-radius: 32px; background: #fff; color: #0b0f18; overflow: hidden; text-align: center; line-height: 64px; font-size: 25px; font-weight: 700; }
+.upn-b i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(11,15,24,.16); transform-origin: 0 0; transform: scaleX(0); }
+.upn-b span { position: relative; }
