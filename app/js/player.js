@@ -13,7 +13,7 @@
     title = h('div', 'hud-title'); sub = h('div', 'hud-sub'); title.dir = 'auto'; sub.dir = 'auto';
     bar = h('i'); tCur = h('span'); tDur = h('span'); hint = h('div', 'hud-hint');
     row = h('div', 'hud-btns');
-    bot = h('div', 'hud-bot', [h('div', 'hud-bar', bar), h('div', 'hud-time', [tCur, tDur]), row, hint]);
+    bot = h('div', 'hud-bot', [h('div', 'hud-bar', bar), h('div', 'hud-time', [tCur, row, tDur]), hint]);
     hud = h('div', 'hud', [h('div', 'hud-top', [title, sub]), bot]);
     msg = h('div'); center = h('div', 'p-center', [h('div', 'spin'), msg]);
     /* "Next episode" card: appears when the credits start, counts down 5 s, then plays the next episode */
@@ -52,7 +52,7 @@
     var it = cur(), ep = o.eps ? o.eps[o.epIdx] : null;
     title.textContent = it.n;
     sub.textContent = ep ? L.t('season') + ep.s + ' \u00b7 ' + L.t('episode') + ep.e + (ep.n ? ' \u00b7 ' + ep.n : '') : '';
-    hint.textContent = L.t(o.live ? 'ch_hint' : 'vod_hint');
+    hint.textContent = L.t(o.live ? 'ch_hint' : o.eps ? 'ep_hint' : 'vod_hint');
     bot.style.visibility = 'visible';
     bar.parentNode.style.visibility = tCur.parentNode.style.visibility = o.live ? 'hidden' : 'visible';
     pend = null; lastSave = 0; lastT = 0; stall = 0;
@@ -73,11 +73,12 @@
   function buildRow() {
     row.textContent = ''; btns = []; sel = -1;
     if (o.live) return;
-    function B(label, fn, ok) { var b = h('div', 'pbtn' + (ok ? '' : ' off'), label); b._fn = fn; b._ok = ok; row.appendChild(b); btns.push(b); }
-    if (o.eps) B('\u23ee  ' + L.t('prev_ep'), function () { goEp(-1); }, hasPrev());
-    B(L.t('audio_btn'), audio, true);
-    B(L.t('subs_btn'), subs, true);
-    if (o.eps) B(L.t('next_ep') + '  \u23ed', function () { learn(); goEp(1); }, hasNext());
+    if (!o.eps) return;
+    var PREV = '<svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9.5 12z"/></svg>';
+    var NEXT = '<svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l10.5-7z"/></svg>';
+    function B(html, fn, ok) { var b = h('div', 'pbtn' + (ok ? '' : ' off')); b.innerHTML = html; b._fn = fn; b._ok = ok; row.appendChild(b); btns.push(b); }
+    B(PREV + '<span>' + L.t('prev_ep') + '</span>', function () { goEp(-1); }, hasPrev());
+    B('<span>' + L.t('next_ep') + '</span>' + NEXT, function () { learn(); goEp(1); }, hasNext());
     paintRow();
   }
   function paintRow() { for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('focus', i === sel); }
@@ -88,7 +89,7 @@
   }
   function rowOpen() {
     if (!btns.length) return;
-    if (sel < 0) { sel = 0; while (sel < btns.length && !btns[sel]._ok) sel++; if (o.eps && hasNext()) sel = btns.length - 1; }
+    if (sel < 0) { sel = 0; while (sel < btns.length && !btns[sel]._ok) sel++; if (hasNext()) sel = btns.length - 1; }
     paintRow(); showHud(true);
   }
   function rowClose() { sel = -1; paintRow(); showHud(); }
@@ -252,8 +253,8 @@
       case K.RIGHT: o.live ? showHud() : seek(1); break;
       case K.RW: seek(-1, true); break;
       case K.FF: seek(1, true); break;
-      case K.UP: o.live ? zap(1) : showHud(); break;
-      case K.DOWN: o.live ? zap(-1) : rowOpen(); break;
+      case K.UP: o.live ? zap(1) : subs(); break;
+      case K.DOWN: o.live ? zap(-1) : o.eps ? rowOpen() : audio(); break;
       case K.CHUP: o.eps ? goEp(1) : zap(1); break;
       case K.CHDN: o.eps ? goEp(-1) : zap(-1); break;
       default: return false;

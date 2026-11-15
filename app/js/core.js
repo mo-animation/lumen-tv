@@ -153,7 +153,7 @@
       added: 'Added to My List', removed: 'Removed from My List', exit_again: 'Press Back again to exit', no_yt: 'Could not open YouTube', tr_sound: 'Press OK for sound', tr_hint: 'OK pause · ◀ ▶ 10s · Back close',
       s_title: 'Connect your provider', s_text: 'Enter your Xtream Codes server with username and password, or paste an M3U playlist link and leave the other two fields empty.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'Connect', demo: 'Try the demo', connecting: 'Connecting…', need_url: 'Enter the server address first', conn_fail: 'Could not connect',
-      now: 'Now: ', next: 'Next: ', ch_hint: '▲▼ Change channel', vod_hint: '◀ ▶ Seek   ·   OK Play / Pause   ·   ▼ More', next_ep: 'Next Episode', prev_ep: 'Previous Episode', up_next: 'Up Next', audio_btn: 'Audio', subs_btn: 'Subtitles',
+      now: 'Now: ', next: 'Next: ', ch_hint: '▲▼ Change channel', vod_hint: '◀ ▶ Seek   ·   OK Play / Pause   ·   ▲ Subtitles   ·   ▼ Audio', ep_hint: '◀ ▶ Seek   ·   OK Play / Pause   ·   ▲ Subtitles   ·   ▼ Episodes', next_ep: 'Next Episode', prev_ep: 'Previous Episode', up_next: 'Up Next', audio_btn: 'Audio', subs_btn: 'Subtitles',
       no_audio: 'No other audio tracks', audio: 'Audio: ', no_subs: 'No subtitles in this video', subs_off: 'Subtitles off', subs: 'Subtitles: ', ch_unavail: 'This channel is not available right now', vid_fail: 'This video cannot be played'
     },
     ar: {
@@ -176,7 +176,7 @@
       added: 'أُضيف إلى قائمتي', removed: 'أُزيل من قائمتي', exit_again: 'اضغط رجوع مرة أخرى للخروج', no_yt: 'تعذّر فتح يوتيوب', tr_sound: 'اضغط OK لتشغيل الصوت', tr_hint: 'OK إيقاف مؤقت · ◀ ▶ ١٠ ثوانٍ · رجوع للإغلاق',
       s_title: 'اتصل بمزوّد الخدمة', s_text: 'أدخل سيرفر Xtream Codes مع اسم المستخدم وكلمة المرور، أو الصق رابط M3U واترك الحقلين الآخرين فارغين.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'اتصال', demo: 'جرّب النسخة التجريبية', connecting: 'جاري الاتصال…', need_url: 'أدخل عنوان السيرفر أولاً', conn_fail: 'تعذّر الاتصال',
-      now: 'الآن: ', next: 'التالي: ', ch_hint: '▲▼ تغيير القناة', vod_hint: '◀ ▶ تقديم   ·   OK تشغيل / إيقاف   ·   ▼ المزيد', next_ep: 'الحلقة التالية', prev_ep: 'الحلقة السابقة', up_next: 'التالي', audio_btn: 'الصوت', subs_btn: 'الترجمة',
+      now: 'الآن: ', next: 'التالي: ', ch_hint: '▲▼ تغيير القناة', vod_hint: '◀ ▶ تقديم   ·   OK تشغيل / إيقاف   ·   ▲ الترجمة   ·   ▼ الصوت', ep_hint: '◀ ▶ تقديم   ·   OK تشغيل / إيقاف   ·   ▲ الترجمة   ·   ▼ الحلقات', next_ep: 'الحلقة التالية', prev_ep: 'الحلقة السابقة', up_next: 'التالي', audio_btn: 'الصوت', subs_btn: 'الترجمة',
       no_audio: 'لا توجد مسارات صوت أخرى', audio: 'الصوت: ', no_subs: 'لا توجد ترجمة', subs_off: 'الترجمة متوقفة', subs: 'الترجمة: ', ch_unavail: 'القناة غير متاحة حالياً', vid_fail: 'تعذّر تشغيل الفيديو'
     }
   };

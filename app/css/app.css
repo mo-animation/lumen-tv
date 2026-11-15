@@ -264,9 +264,15 @@ svg { display: block; fill: currentColor; }
 .trhint { position: absolute; left: 0; right: 0; top: 920px; text-align: center; font-size: 26px; color: rgba(255,255,255,.75); }
 
 /* player buttons and the "Next episode" card */
-.hud-bot { height: 360px; padding-top: 120px; }
-.hud-btns { display: flex; margin-top: 18px; height: 56px; }
-.pbtn { height: 56px; line-height: 56px; padding: 0 28px; margin-right: 16px; border-radius: 28px; font-size: 23px; font-weight: 600; background: rgba(255,255,255,.14); box-shadow: inset 1.5px 1.5px 0 rgba(255,255,255,.35); white-space: nowrap; }
+.hud-bot { height: 300px; padding-top: 140px; }
+.hud-time { align-items: center; height: 44px; }
+.hud-time > span { flex: none; min-width: 90px; }
+.hud-time > span:last-child { text-align: right; }
+/* episode buttons sit on the time line, with room for long times like 2:45:10 */
+.hud-btns { flex: 1; display: flex; justify-content: space-between; margin: 0 36px; height: 44px; }
+.pbtn { display: flex; align-items: center; height: 44px; padding: 0 18px; border-radius: 22px; font-size: 19px; font-weight: 600; background: rgba(255,255,255,.12); box-shadow: inset 1px 1px 0 rgba(255,255,255,.3); white-space: nowrap; }
+.pbtn svg { width: 18px; height: 18px; fill: currentColor; }
+.pbtn svg:first-child { margin-right: 10px; } .pbtn span + svg { margin-left: 10px; }
 .pbtn.off { opacity: .35; }
 .pbtn.focus { background: #fff; color: #0b0f18; transform: scale(1.06); }
 .upn { position: absolute; right: 80px; bottom: 90px; width: 520px; padding: 26px 30px 30px; border-radius: 26px; background: rgba(18,22,32,.86); box-shadow: inset 1.5px 1.5px 0 rgba(255,255,255,.4), inset -1px -1px 0 rgba(255,255,255,.12), 0 20px 50px rgba(0,0,0,.5); opacity: 0; transform: translate3d(0,20px,0); transition: opacity .25s, transform .25s; }
