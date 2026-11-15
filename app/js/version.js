@@ -1,1 +1,1 @@
-window.LUMEN_BUILD = { build: 8, version: '1.1.6' };
+window.LUMEN_BUILD = { build: 9, version: '1.1.7' };
