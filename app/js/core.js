@@ -88,7 +88,23 @@
       out.sort(function (a, b) { return b.ts - a.ts; });
       return out.map(function (p) { return p.item; });
     },
-    clear: function () { prog = {}; S.set('prog', prog); L.dirty = true; }
+    clear: function () { prog = {}; S.set('prog', prog); L.seen.clear(); L.dirty = true; }
+  };
+
+  /* episodes you finished, per show: shaded in the episode list */
+  var seen;
+  L.seen = {
+    all: function () { return seen || (seen = S.get('seen', {})); },
+    has: function (it, ep) { var a = L.seen.all()[L.key(it)]; return !!(a && ep && a.indexOf(String(ep.id)) >= 0); },
+    add: function (it, ep) {
+      if (!it || !ep) return;
+      var m = L.seen.all(), k = L.key(it), a = m[k] || (m[k] = []), id = String(ep.id);
+      if (a.indexOf(id) >= 0) return;
+      a.push(id); if (a.length > 600) a.shift();
+      var keys = Object.keys(m); if (keys.length > 80) delete m[keys[0]];
+      S.set('seen', m);
+    },
+    clear: function () { seen = {}; S.set('seen', seen); }
   };
 
   /* ---- IndexedDB cache for big lists (instant relaunch) ---- */

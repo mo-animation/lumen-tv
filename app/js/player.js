@@ -133,7 +133,7 @@
     upnOn = false; upn.classList.remove('on');
     upnFill.style.transition = 'none'; upnFill.style.transform = 'scaleX(0)';
   }
-  function playNext() { hideUpNext(); goEp(1); }
+  function playNext() { hideUpNext(); if (o.eps) L.seen.add(o.item, o.eps[o.epIdx]); goEp(1); }
 
   function tick() {
     if (o.live || !v) return;
@@ -154,6 +154,7 @@
     var t = v.currentTime, d = v.duration, ep = o.eps ? o.eps[o.epIdx] : null;
     if (t < 20) return;
     if (t > d * 0.95) {
+      if (ep) L.seen.add(o.item, ep);
       if (ep && o.epIdx + 1 < o.eps.length) L.prog.set(o.item, 0, d, o.eps[o.epIdx + 1]);
       else L.prog.del(L.key(o.item));
     } else L.prog.set(o.item, t, d, ep);

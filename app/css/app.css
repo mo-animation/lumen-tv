@@ -282,3 +282,8 @@ svg { display: block; fill: currentColor; }
 .upn-b { position: relative; height: 64px; border-radius: 32px; background: #fff; color: #0b0f18; overflow: hidden; text-align: center; line-height: 64px; font-size: 25px; font-weight: 700; }
 .upn-b i { position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(11,15,24,.16); transform-origin: 0 0; transform: scaleX(0); }
 .upn-b span { position: relative; }
+
+/* watched episodes: dimmed, with a full progress bar */
+.card.seen .art img, .card.seen .art .fb { opacity: .4; }
+.card.seen .lab { opacity: .6; }
+.card.seen.focus .art img, .card.seen.focus .art .fb { opacity: .7; }

@@ -438,12 +438,15 @@
       sIdx = i;
       for (var k = 0; k < pills.childNodes.length; k++) pills.childNodes[k].classList.toggle('on', k === i);
       if (epRow) extra.removeChild(epRow);
-      var pr = L.prog.get(L.key(item)), eps = info.seasons[i].eps;
+      var pr = L.prog.get(L.key(item)), eps = info.seasons[i].eps, r = resumeEp();
       epRow = L.row('', eps, {
         kind: 'wide', noLong: true,
         fill: function (c, ep) {
           var cur = pr && pr.ep && String(pr.ep.id) === String(ep.id), nm = ep.n || t('episode') + ep.e;
-          L.card.fill(c, { t: 'ep', id: ep.id, n: nm, i: ep.img }, { label: ep.e + '. ' + nm, fb: 'E' + ep.e, noStar: true, noProg: true, pct: cur && pr.dur ? pr.pos / pr.dur : 0 });
+          /* watched: finished before, or comes before the episode you're on now */
+          var done = !cur && (L.seen.has(item, ep) || (r.has && (i < r.s || (i === r.s && eps.indexOf(ep) < r.e))));
+          L.card.fill(c, { t: 'ep', id: ep.id, n: nm, i: ep.img }, { label: ep.e + '. ' + nm, fb: 'E' + ep.e, noStar: true, noProg: true, pct: done ? 1 : cur && pr.dur ? pr.pos / pr.dur : 0 });
+          c.classList.toggle('seen', done);
         },
         act: function (ep, list, idx) { var cur = pr && pr.ep && String(pr.ep.id) === String(ep.id); playEp(i, idx, cur ? pr.pos : 0); }
       });
