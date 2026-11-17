@@ -287,3 +287,8 @@ svg { display: block; fill: currentColor; }
 .card.seen .art img, .card.seen .art .fb { opacity: .4; }
 .card.seen .lab { opacity: .6; }
 .card.seen.focus .art img, .card.seen.focus .art .fb { opacity: .7; }
+
+/* detail page: info + rows slide up together to show "More Like This" */
+.d-move { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transition: transform .3s ease-out; }
+.d-recs { margin-top: 10px; }
+.d-recs h2 { margin-bottom: 0; }

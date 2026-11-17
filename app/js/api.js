@@ -153,9 +153,13 @@
         return out;
       });
     });
-    return Promise.all([raw, D.all(t)]).then(function (r) {
+    return Promise.all([raw, D.all(t)]).then(function (r) { return match(t, r[0]); });
+  };
+  /* TMDB results → copies of the matching IPTV titles (with TMDB poster); titles the server lacks are dropped */
+  function match(t, list, skip) {
       var ix = index(t), seen = {}, out = [];
-      r[0].forEach(function (x) {
+      if (skip) seen[skip] = 1;
+      list.forEach(function (x) {
         var names = [x.n, x.o];
         for (var j = 0; j < names.length; j++) {
           var c = ix[TM.norm(names[j])]; if (!c) continue;
@@ -170,8 +174,10 @@
         }
       });
       return out;
-    });
-  };
+  }
+  function slimRes(d) {
+    return ((d && d.results) || []).map(function (x) { return { id: x.id, n: x.title || x.name || '', o: x.original_title || x.original_name || '', y: String(x.release_date || x.first_air_date || '').slice(0, 4), p: x.poster_path || '' }; });
+  }
   TM.test = function (key) { return req('https://api.themoviedb.org/3/configuration?api_key=' + enc(key), false, 8000); };
   TM.fetch = function (it, inf) {
     var type = it.t === 'vod' ? 'movie' : 'tv', lang = L.lang === 'ar' ? 'ar' : 'en-US', c = TM.clean(it.n);
@@ -184,7 +190,8 @@
         return null;
       });
     }
-    var idp = it.tmid ? Promise.resolve(it.tmid) : inf && inf.tmdb && /^\d+$/.test(String(inf.tmdb)) ? Promise.resolve(inf.tmdb) : search(true);
+    var idp = it.tmid ? Promise.resolve(it.tmid) : inf && inf.tmid ? Promise.resolve(inf.tmid) : inf && inf.tmdb && /^\d+$/.test(String(inf.tmdb)) ? Promise.resolve(inf.tmdb) : search(true);
+    if (inf && inf.idOnly) return idp;
     return idp.then(function (id) {
       if (!id) return { none: 1 };
       return tm('/' + type + '/' + id, '&language=' + lang + '&append_to_response=videos,credits&include_video_language=' + (lang === 'ar' ? 'ar,en,null' : 'en,null')).then(function (d) {
@@ -197,12 +204,78 @@
           year: String(d.release_date || d.first_air_date || '').slice(0, 4), rating: d.vote_average ? String(Math.round(d.vote_average * 10) / 10) : '',
           genre: (d.genres || []).slice(0, 3).map(function (g) { return g.name; }).join(', '),
           cast: ((d.credits && d.credits.cast) || []).slice(0, 5).map(function (p) { return p.name; }).join(', '),
-          dur: rt ? (rt >= 60 ? Math.floor(rt / 60) + 'h ' : '') + (rt % 60) + 'm' : '', trailer: tr ? tr.key : ''
+          dur: rt ? (rt >= 60 ? Math.floor(rt / 60) + 'h ' : '') + (rt % 60) + 'm' : '', trailer: tr ? tr.key : '', tmid: id
         };
         if (o.plot || lang !== 'ar') return o;
         return tm('/' + type + '/' + id, '&language=en-US').then(function (e) { o.plot = (e && e.overview) || ''; return o; }, function () { return o; });
       });
     });
+  };
+  /* "More Like This". TMDB's own recommendations are weak, so Lumen scores candidates itself:
+     same collection (sequels) > same director > titles sharing several theme keywords > TMDB recommendations/similar,
+     plus shared genres and a small bonus for well-rated titles. At most 6 from the same director, so the
+     row stays varied. Only titles on the IPTV server are shown. Cached a week per title.
+     (If this turns out not good enough, Trakt's "related" API is the planned alternative.) */
+  TM.similar = function (it, inf) {
+    if (!TM.key() || (it.t !== 'vod' && it.t !== 'series')) return Promise.resolve([]);
+    var t = it.t, type = t === 'vod' ? 'movie' : 'tv';
+    var q = {}; for (var f in (inf || {})) q[f] = inf[f]; q.idOnly = 1;
+    function none() { return []; }
+    return TM.fetch(it, q).then(function (id) {
+      if (!id) return [];
+      var key = 'tms4:' + type + ':' + id;
+      var raw = L.cache.get(key).then(function (c) {
+        if (c && c.v && Date.now() - c.ts < 7 * 24 * 3600 * 1000) return c.v;
+        return tm('/' + type + '/' + id, '&language=en-US&append_to_response=keywords,credits,recommendations,similar').then(function (d) {
+          var genres = {}, cand = {}, order = [];
+          (d.genres || []).forEach(function (g) { genres[g.id] = 1; });
+          var kws = ((d.keywords && (d.keywords.keywords || d.keywords.results)) || []).map(function (k) { return k.id; });
+          function add(list, pts, tag) {
+            (list || []).forEach(function (x) {
+              if (!x || x.id === d.id || x.adult) return;
+              var c = cand[x.id];
+              if (!c) { c = cand[x.id] = { x: x, s: 0, tags: {} }; order.push(c); }
+              if (!c.tags[tag]) { c.tags[tag] = 1; c.s += pts; }
+            });
+          }
+          /* one query per theme keyword: titles sharing several themes add up */
+          add(d.recommendations && d.recommendations.results, 3, 'rec');
+          add(d.similar && d.similar.results, 1.5, 'sim');
+          var more = [];
+          if (d.belongs_to_collection) more.push(tm('/collection/' + d.belongs_to_collection.id, '&language=en-US').then(function (c) { add(c && c.parts, 20, 'col'); }, none));
+          var makers = type === 'movie'
+            ? ((d.credits && d.credits.crew) || []).filter(function (c) { return c.job === 'Director'; }).slice(0, 1)
+            : (d.created_by || []).slice(0, 1);
+          makers.forEach(function (p) {
+            more.push(tm('/person/' + p.id + '/' + type + '_credits', '&language=en-US').then(function (cr) {
+              var mine = ((cr && cr.crew) || []).filter(function (c) { return type === 'tv' || c.job === 'Director'; });
+              mine.sort(function (a, b) { return (b.vote_count || 0) - (a.vote_count || 0); });
+              add(mine.slice(0, 6), 5, 'dir');
+            }, none));
+          });
+          kws.slice(0, 8).forEach(function (k) {
+            more.push(tm('/discover/' + type, '&language=en-US&sort_by=vote_count.desc&with_keywords=' + k).then(function (r) { add(r && r.results, 2.5, 'kw' + k); }, none));
+          });
+          var anim = !!genres[16], lang = d.original_language;
+          return Promise.all(more).then(function () {
+            order.forEach(function (c) {
+              var x = c.x, gs = x.genre_ids || (x.genres || []).map(function (g) { return g.id; }), shared = 0;
+              gs.forEach(function (g) { if (genres[g]) shared++; });
+              c.s += shared ? shared * 1.5 : -1.5;
+              if (!anim && gs.indexOf(16) >= 0) c.s -= 6;                      /* no anime for live-action */
+              if (lang === 'en' && x.original_language && x.original_language !== 'en') c.s -= 2;
+              c.s += Math.min(2.5, (x.vote_average || 0) / 4);
+              if ((x.vote_count || 0) < 150 && !c.tags.col) c.s -= 3;
+            });
+            order.sort(function (a, b) { return b.s - a.s; });
+            var out = slimRes({ results: order.slice(0, 120).map(function (c) { return c.x; }) });
+            if (out.length) L.cache.set(key, out);
+            return out;
+          });
+        });
+      });
+      return Promise.all([raw, D.all(t)]).then(function (r) { return match(t, r[0], L.key(it)).slice(0, 24); });
+    }).catch(function () { return []; });
   };
   /* cached per title; anything TMDB lacks stays as the IPTV server gave it */
   TM.enrich = function (it, inf) {

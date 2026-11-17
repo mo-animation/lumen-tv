@@ -406,12 +406,21 @@
     var ttl = h('div', 'd-title', item.n), meta = h('div', 'd-meta'), plot = h('div', 'd-plot'), cast = h('div', 'd-cast'), btns = h('div', 'btns fg'), extra = h('div', 'd-extra');
     ttl.dir = 'auto'; plot.dir = 'auto'; cast.dir = 'auto';
     el.appendChild(bd); el.appendChild(shade); el.appendChild(poster);
-    el.appendChild(h('div', 'd-info', [ttl, meta, plot, cast, btns])); el.appendChild(extra);
+    /* d-move holds the info and the rows; it slides up when you go down to "More Like This" */
+    var move = h('div', 'd-move', [h('div', 'd-info', [ttl, meta, plot, cast, btns]), extra]);
+    el.appendChild(move);
     bd.onload = function () { bd.style.opacity = 1; shade.style.opacity = 1; poster.style.display = 'none'; };
     poster.onload = function () { poster.style.visibility = 'visible'; };
-    var info = null, sIdx = 0, epRow = null, pills = null;
+    var info = null, sIdx = 0, epRow = null, pills = null, recRow = null;
+    function slide(y) { move.style.transform = y ? 'translate3d(0,' + (-y) + 'px,0)' : ''; }
+    function up() { slide(0); }
+    function down() {
+      if (!recRow) return;
+      var bottom = extra.offsetTop + recRow.offsetTop + recRow.offsetHeight;
+      slide(Math.max(0, bottom - 1050));
+    }
 
-    function B(label, icon, fn) { var b = h('div', 'btn f', [icon ? L.icon(icon) : null, h('span', '', label)]); b._act = fn; btns.appendChild(b); return b; }
+    function B(label, icon, fn) { var b = h('div', 'btn f', [icon ? L.icon(icon) : null, h('span', '', label)]); b._act = fn; b._onFocus = up; btns.appendChild(b); return b; }
     function resumeEp() {
       var pr = L.prog.get(L.key(item)), s = 0, e = 0, start = 0;
       if (pr && pr.ep && info) info.seasons.forEach(function (se, si) { se.eps.forEach(function (ep, ei) { if (String(ep.id) === String(pr.ep.id)) { s = si; e = ei; start = pr.pos; } }); });
@@ -446,11 +455,11 @@
           /* watched: finished before, or comes before the episode you're on now */
           var done = !cur && (L.seen.has(item, ep) || (r.has && (i < r.s || (i === r.s && eps.indexOf(ep) < r.e))));
           L.card.fill(c, { t: 'ep', id: ep.id, n: nm, i: ep.img }, { label: ep.e + '. ' + nm, fb: 'E' + ep.e, noStar: true, noProg: true, pct: done ? 1 : cur && pr.dur ? pr.pos / pr.dur : 0 });
-          c.classList.toggle('seen', done);
+          c.classList.toggle('seen', done); c._onFocus = up;
         },
         act: function (ep, list, idx) { var cur = pr && pr.ep && String(pr.ep.id) === String(ep.id); playEp(i, idx, cur ? pr.pos : 0); }
       });
-      extra.appendChild(epRow);
+      if (recRow) extra.insertBefore(epRow, recRow); else extra.appendChild(epRow);
     }
     function refresh() {
       var inRow = epRow && epRow.contains(N.cur);
@@ -477,7 +486,7 @@
         if (!inf.seasons || !inf.seasons.length) { extra.appendChild(h('div', 'row', h('h2', '', t('no_eps')))); return; }
         pills = h('div', 'hs pills fg');
         inf.seasons.forEach(function (se, i) {
-          var p = h('div', 'pill f', t('season') + se.s);
+          var p = h('div', 'pill f', t('season') + se.s); p._onFocus = up;
           p._act = function () { if (sIdx !== i) season(i); };
           pills.appendChild(p);
         });
@@ -485,6 +494,14 @@
         var r = resumeEp(); sIdx = r.s; season(r.s);
         pills._last = pills.childNodes[r.s];
       }
+      /* More Like This: TMDB picks that are on the IPTV server */
+      L.tmdb.similar(item, inf).then(function (list) {
+        if (!list.length || A.layers.indexOf(el) < 0) return;
+        recRow = L.row(t('more_like'), list);
+        recRow.classList.add('d-recs');
+        for (var k = 0; k < recRow._hs.childNodes.length; k++) recRow._hs.childNodes[k]._onFocus = down;
+        extra.appendChild(recRow);
+      });
     }, function (e) { plot.textContent = (e && e.message) || t('load_fail'); });
   };
 
