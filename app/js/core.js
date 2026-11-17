@@ -25,7 +25,10 @@
     check: '<svg viewBox="0 0 24 24"><path d="M9 16.2l-4.2-4.2-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>',
     tv: '<svg viewBox="0 0 24 24"><path d="M3 4h18a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V5a1 1 0 011-1zm1 2v10h16V6H4zm4 13h8v2H8z"/></svg>',
     film: '<svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 011 1v14a1 1 0 01-1 1H4a1 1 0 01-1-1V5a1 1 0 011-1zm1 2v2h2V6H5zm0 4v4h2v-4H5zm0 6v2h2v-2H5zm12-10v2h2V6h-2zm0 4v4h2v-4h-2zm0 6v2h2v-2h-2zM9 6v12h6V6H9z"/></svg>',
-    back: '<svg viewBox="0 0 24 24"><path d="M12 5V1L6 6l6 5V7a6 6 0 11-6 6H4a8 8 0 108-8z"/></svg>'
+    back: '<svg viewBox="0 0 24 24"><path d="M12 5V1L6 6l6 5V7a6 6 0 11-6 6H4a8 8 0 108-8z"/></svg>',
+    star: '<svg viewBox="0 0 24 24"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg>',
+    list: '<svg viewBox="0 0 24 24"><path d="M3 5h2v2H3zm4 0h14v2H7zM3 11h2v2H3zm4 0h14v2H7zm-4 6h2v2H3zm4 0h9v2H7z"/></svg>',
+    close: '<svg viewBox="0 0 24 24"><path d="M6.4 5L12 10.6 17.6 5 19 6.4 13.4 12l5.6 5.6-1.4 1.4-5.6-5.6L6.4 19 5 17.6 10.6 12 5 6.4z"/></svg>'
   };
   L.icon = function (name) { var s = document.createElement('span'); s.innerHTML = L.icons[name]; return s.firstChild; };
 
@@ -53,6 +56,32 @@
   };
 
   function slim(it) { return { t: it.t, id: it.id, n: it.n, i: it.i, c: it.c, e: it.e, u: it.u, eps: it.t === 'series' ? it.eps : undefined, tmid: it.tmid }; }
+
+  /* your own lists ("Action night", "Kids"...), newest-used first */
+  var lists = null;
+  L.lists = {
+    all: function () { return lists || (lists = S.get('lists', [])); },
+    save: function () { S.set('lists', lists); L.dirty = true; },
+    get: function (id) { return L.lists.all().filter(function (l) { return l.id === id; })[0]; },
+    create: function (name) {
+      var l = { id: 'l' + Date.now().toString(36), name: name, ts: Date.now(), items: {} };
+      L.lists.all().unshift(l); L.lists.save(); return l;
+    },
+    has: function (id, it) { var l = L.lists.get(id); return !!(l && l.items[L.key(it)]); },
+    toggle: function (id, it) {
+      var l = L.lists.get(id); if (!l) return false;
+      var k = L.key(it), on = !l.items[k];
+      if (on) { l.items[k] = slim(it); l.items[k].ts = Date.now(); } else delete l.items[k];
+      l.ts = Date.now();
+      lists.sort(function (a, b) { return b.ts - a.ts; });
+      L.lists.save(); return on;
+    },
+    items: function (id) {
+      var l = L.lists.get(id), out = []; if (!l) return out;
+      for (var k in l.items) out.push(l.items[k]);
+      return out.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    }
+  };
 
   var favs = null;
   L.fav = {
@@ -165,7 +194,7 @@
       live_fmt: 'Live stream format', update: 'Check for updates', checking: 'Checking…', uptodate: 'Up to date', installing: 'Installing update…', upd_fail: 'Could not check', upd_none: 'No update source set', upd_avail: 'Update available — open Settings',
       refresh: 'Refresh library', refresh_sub: 'Reload channels and titles', refreshing: 'Refreshing…', clear_hist: 'Clear watch history', cleared: 'Cleared',
       signout: 'Sign out', signout_sub: 'Switch provider', version: 'Version',
-      resume_from: 'Resume from ', start_over: 'Start Over', in_list: 'In My List', trailer: 'Trailer', more_like: 'More Like This', season: 'Season ', episode: 'Episode ', no_eps: 'No episodes available', cast: 'Cast: ',
+      resume_from: 'Resume from ', start_over: 'Start Over', in_list: 'In My List', trailer: 'Trailer', more_like: 'More Like This', m_add_fav: 'Add to My List', m_rm_fav: 'Remove from My List', m_new_list: 'New List…', m_in: 'In ', m_add_to: 'Add to ', m_rm_cw: 'Remove from Continue Watching', m_rm_cw_done: 'Removed from Continue Watching', m_from_start: 'Play from the Beginning', m_list_name: 'List name', m_create: 'Create', m_created: 'List created: ', m_added_to: 'Added to ', m_removed_from: 'Removed from ', m_cancel: 'Cancel', season: 'Season ', episode: 'Episode ', no_eps: 'No episodes available', cast: 'Cast: ',
       added: 'Added to My List', removed: 'Removed from My List', exit_again: 'Press Back again to exit', no_yt: 'Could not open YouTube', tr_sound: 'Press OK for sound', tr_hint: 'OK pause · ◀ ▶ 10s · Back close',
       s_title: 'Connect your provider', s_text: 'Enter your Xtream Codes server with username and password, or paste an M3U playlist link and leave the other two fields empty.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'Connect', demo: 'Try the demo', connecting: 'Connecting…', need_url: 'Enter the server address first', conn_fail: 'Could not connect',
@@ -188,7 +217,7 @@
       live_fmt: 'صيغة البث المباشر', update: 'البحث عن تحديثات', checking: 'جاري البحث…', uptodate: 'أحدث إصدار', installing: 'جاري تثبيت التحديث…', upd_fail: 'تعذّر البحث', upd_none: 'مصدر التحديث غير محدد', upd_avail: 'يوجد تحديث — افتح الإعدادات',
       refresh: 'تحديث المكتبة', refresh_sub: 'إعادة تحميل القنوات والعناوين', refreshing: 'جاري التحديث…', clear_hist: 'مسح سجل المشاهدة', cleared: 'تم المسح',
       signout: 'تسجيل الخروج', signout_sub: 'تغيير المزوّد', version: 'الإصدار',
-      resume_from: 'متابعة من ', start_over: 'من البداية', in_list: 'في قائمتي', trailer: 'تريلر', more_like: 'أعمال مشابهة', season: 'الموسم ', episode: 'الحلقة ', no_eps: 'لا توجد حلقات', cast: 'بطولة: ',
+      resume_from: 'متابعة من ', start_over: 'من البداية', in_list: 'في قائمتي', trailer: 'تريلر', more_like: 'أعمال مشابهة', m_add_fav: 'إضافة إلى قائمتي', m_rm_fav: 'إزالة من قائمتي', m_new_list: 'قائمة جديدة…', m_in: 'موجود في ', m_add_to: 'إضافة إلى ', m_rm_cw: 'إزالة من متابعة المشاهدة', m_rm_cw_done: 'أُزيل من متابعة المشاهدة', m_from_start: 'تشغيل من البداية', m_list_name: 'اسم القائمة', m_create: 'إنشاء', m_created: 'تم إنشاء القائمة: ', m_added_to: 'أُضيف إلى ', m_removed_from: 'أُزيل من ', m_cancel: 'إلغاء', season: 'الموسم ', episode: 'الحلقة ', no_eps: 'لا توجد حلقات', cast: 'بطولة: ',
       added: 'أُضيف إلى قائمتي', removed: 'أُزيل من قائمتي', exit_again: 'اضغط رجوع مرة أخرى للخروج', no_yt: 'تعذّر فتح يوتيوب', tr_sound: 'اضغط OK لتشغيل الصوت', tr_hint: 'OK إيقاف مؤقت · ◀ ▶ ١٠ ثوانٍ · رجوع للإغلاق',
       s_title: 'اتصل بمزوّد الخدمة', s_text: 'أدخل سيرفر Xtream Codes مع اسم المستخدم وكلمة المرور، أو الصق رابط M3U واترك الحقلين الآخرين فارغين.',
       s_url: 'Server address or M3U playlist link', s_user: 'Username (Xtream Codes)', s_pass: 'Password (Xtream Codes)', connect: 'اتصال', demo: 'جرّب النسخة التجريبية', connecting: 'جاري الاتصال…', need_url: 'أدخل عنوان السيرفر أولاً', conn_fail: 'تعذّر الاتصال',

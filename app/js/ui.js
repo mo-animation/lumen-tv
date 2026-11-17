@@ -108,11 +108,105 @@
     wide: function () { return { kind: 'wide', cols: 5, w: 260, h: 188, gx: 30, gy: 26 }; }
   };
 
-  /* toggle favourite on long-press OK */
-  L.longFav = function (it, el, refill) {
+  /* long-press OK: channels toggle Favorites; movies and shows open the card menu */
+  L.longFav = function (it, el, refill, ctx, changed) {
+    if (it && it.t !== 'live' && el) { L.cardMenu(it, el, ctx, function (big) { (refill || L.card.fill)(el, it); if (changed) changed(big); }); return; }
     var on = L.fav.toggle(it);
     L.toast(L.t(on ? 'added' : 'removed'));
     if (el) (refill || L.card.fill)(el, it);
+  };
+
+  /* ---------- glass menu beside a card ---------- */
+  var menuOpen = false;
+  /* Apple-style: the screen dims, the held card lifts slightly above the dim, the menu springs out beside it.
+     Only opacity/transform animate (no blur: it stutters on TV chips). */
+  L.menu = function (anchor, title, entries) {
+    if (menuOpen) return;
+    var N = L.nav, app = document.getElementById('app');
+    var shade = h('div', 'cm-shade'), panel = h('div', 'cmenu glass'), ov = h('div', 'cmenu-ov', [shade]);
+    if (title) { var tl = h('div', 'cm-title', title); tl.dir = 'auto'; panel.appendChild(tl); }
+    entries.forEach(function (e) {
+      if (e.sep) { panel.appendChild(h('div', 'cm-sep')); return; }
+      var lab = h('span', '', e.label); lab.dir = 'auto';
+      var it = h('div', 'cm-item f' + (e.on ? ' on' : ''), [L.icon(e.icon || 'plus'), lab]);
+      it._act = function () { close(); e.fn(); };
+      panel.appendChild(it);
+    });
+    var ar = app.getBoundingClientRect(), r = anchor.getBoundingClientRect(), sc = L.scale || 1;
+    var x0 = (r.left - ar.left) / sc, x1 = (r.right - ar.left) / sc, y0 = (r.top - ar.top) / sc, vw = (r.right - r.left) / sc, vh = (r.bottom - r.top) / sc;
+
+    /* a copy of the card sits above the dim, at exactly the same spot, then grows a little */
+    var lift = anchor.cloneNode(true), w0 = anchor.offsetWidth || vw, h0 = anchor.offsetHeight || vh, s0 = vw / w0;
+    lift.classList.remove('f'); lift.classList.add('focus', 'cm-lift');
+    lift.style.left = Math.round(x0 + (vw - w0) / 2) + 'px'; lift.style.top = Math.round(y0 + (vh - h0) / 2) + 'px';
+    lift.style.width = w0 + 'px'; lift.style.transform = 'scale(' + s0 + ')';
+    ov.appendChild(lift); ov.appendChild(panel);
+
+    function close() {
+      if (!menuOpen) return; menuOpen = false;
+      ov.classList.remove('on'); lift.style.transform = 'scale(' + s0 + ')';
+      setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); }, 220);
+      N.pop();
+    }
+    menuOpen = true;
+    app.appendChild(ov);
+    /* beside the card: right side, or left when there's no room (mirrored in Arabic) */
+    var w = panel.offsetWidth, hgt = panel.offsetHeight, gap = 40;
+    var right = x1 + gap + w <= 1890, left = x0 - gap - w >= 30;
+    var onLeft = L.rtl ? left : !right;
+    var x = onLeft ? x0 - gap - w : x1 + gap;
+    var y = Math.max(40, Math.min(1080 - hgt - 40, y0));
+    panel.style.left = Math.round(x) + 'px'; panel.style.top = Math.round(y) + 'px';
+    panel.style.transformOrigin = (onLeft ? '100% ' : '0 ') + Math.max(0, Math.min(hgt, y0 + vh / 2 - y)) + 'px';
+    N.push({ root: panel, onBack: close });
+    N.focus(panel.querySelector('.f'));
+    void ov.offsetWidth; /* start the animation from the first frame */
+    ov.classList.add('on'); lift.style.transform = 'scale(' + (s0 * 1.07) + ')';
+    return close;
+  };
+
+  /* name a new list */
+  L.ask = function (title, ph, ok) {
+    var N = L.nav, app = document.getElementById('app');
+    var inp = h('input', 'inp f'); inp.placeholder = ph; inp.type = 'text'; inp.autocomplete = 'off'; inp.spellcheck = false; inp.dir = 'auto';
+    inp._act = function () { inp.focus(); };
+    var go = h('div', 'btn f', L.t('m_create')), no = h('div', 'btn f', L.t('m_cancel'));
+    var box = h('div', 'cask glass fg', [h('div', 'cm-title', title), inp, h('div', 'btns', [go, no])]), ov = h('div', 'cmenu-ov', [h('div', 'cm-shade'), box]);
+    function close() { ov.classList.remove('on'); setTimeout(function () { if (ov.parentNode) ov.parentNode.removeChild(ov); }, 220); N.pop(); }
+    go._act = function () { var v = inp.value.trim(); if (!v) { N.focus(inp); inp.focus(); return; } close(); ok(v); };
+    no._act = close;
+    inp.addEventListener('keydown', function (e) { if (e.keyCode === 13) { e.preventDefault(); go._act(); } });
+    app.appendChild(ov); void ov.offsetWidth; ov.classList.add('on');
+    N.push({ root: box, onBack: close });
+    N.focus(inp); setTimeout(function () { inp.focus(); }, 50);
+  };
+
+  /* the menu for a movie / show / episode card. ctx: 'cw' (Continue Watching row) or {ep, play} for episodes */
+  L.cardMenu = function (it, el, ctx, after) {
+    var t = L.t, E = [];
+    after = after || function () { };
+    if (ctx && ctx.ep) {
+      E.push({ label: t('m_from_start'), icon: 'back', fn: function () { ctx.play(0); } });
+      L.menu(el, ctx.title || '', E); return;
+    }
+    var fav = L.fav.has(it);
+    E.push({ label: t(fav ? 'm_rm_fav' : 'm_add_fav'), icon: fav ? 'check' : 'star', on: fav, fn: function () { L.fav.toggle(it); L.toast(t(fav ? 'removed' : 'added')); after(); } });
+    L.lists.all().slice(0, 3).forEach(function (l) {
+      var on = L.lists.has(l.id, it);
+      E.push({ label: (on ? t('m_in') : t('m_add_to')) + l.name, icon: on ? 'check' : 'list', on: on, fn: function () {
+        var now = L.lists.toggle(l.id, it); L.toast(t(now ? 'm_added_to' : 'm_removed_from') + l.name); after();
+      } });
+    });
+    E.push({ label: t('m_new_list'), icon: 'plus', fn: function () {
+      L.ask(t('m_new_list').replace('…', ''), t('m_list_name'), function (name) {
+        var l = L.lists.create(name); L.lists.toggle(l.id, it); L.toast(t('m_created') + name); after();
+      });
+    } });
+    if (ctx === 'cw') {
+      E.push({ sep: 1 });
+      E.push({ label: t('m_rm_cw'), icon: 'close', fn: function () { L.prog.del(L.key(it)); L.toast(t('m_rm_cw_done')); after(true); } });
+    }
+    L.menu(el, it.n, E);
   };
 
   /* horizontal row of cards (home / detail) */
@@ -123,7 +217,7 @@
       var el = L.card.make(o.kind || (it.t === 'live' ? 'wide' : ''));
       (o.fill || L.card.fill)(el, it, o.opt);
       el._act = function () { (o.act || L.open)(it, items, i); };
-      if (!o.noLong) el._long = function () { L.longFav(it, null); (o.fill || L.card.fill)(el, it, o.opt); };
+      if (!o.noLong) el._long = function () { L.longFav(it, el, function () { (o.fill || L.card.fill)(el, it, o.opt); }, o.ctx, o.changed); };
       hs.appendChild(el);
     });
     row._hs = hs;

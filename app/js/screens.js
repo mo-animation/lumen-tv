@@ -153,8 +153,10 @@
       var wasCard = N.cur && rows.contains(N.cur);
       rows.textContent = '';
       var cw = L.prog.list(), fm = L.fav.list(false), f;
-      if (cw.length) rows.appendChild(L.row(t('cw'), cw, { act: function (it) { if (it.t === 'vod') playVod(it); else L.detail(it); } }));
-      if (fm.length) rows.appendChild(L.row(t('mylist'), fm));
+      function changed() { L.dirty = true; build(); }
+      if (cw.length) rows.appendChild(L.row(t('cw'), cw, { ctx: 'cw', changed: changed, act: function (it) { if (it.t === 'vod') playVod(it); else L.detail(it); } }));
+      if (fm.length) rows.appendChild(L.row(t('mylist'), fm, { changed: changed }));
+      L.lists.all().forEach(function (l) { var li = L.lists.items(l.id); if (li.length) rows.appendChild(L.row(l.name, li, { changed: changed })); });
       if ((f = D.full.vod) && f.items.length) rows.appendChild(L.row(t('recent_movies'), f.items.slice(0, 24)));
       if ((f = D.full.series) && f.items.length) rows.appendChild(L.row(t('recent_series'), f.items.slice(0, 24)));
       if (!feats.length) {
@@ -190,8 +192,14 @@
     var cfg = c.kind === 'wide' ? L.GRID.wide() : L.GRID.poster(6);
     cfg.fill = function (e, it) { L.card.fill(e, it); };
     cfg.act = function (it, i, items) { L.open(it, items); };
-    cfg.long = function (it, e) { L.longFav(it, e); };
-    var grid = new L.VGrid(host, cfg), tok = 0, sideTok = 0, sel = null, selEl = null;
+    cfg.long = function (it, e) {
+      L.longFav(it, e, null, c.ctx ? c.ctx(sel) : null, function () {
+        if (!c.reload) return;
+        if (c.sideKey && c.sideKey() !== sideKey) { sideKey = c.sideKey(); fillSide(src); N.focus(selEl); return; }
+        var cat = sel, b = selEl; sel = null; if (cat) pick(cat, b); N.focus(b);
+      });
+    };
+    var grid = new L.VGrid(host, cfg), tok = 0, sideTok = 0, sel = null, selEl = null, sideKey = c.sideKey ? c.sideKey() : '';
     var src = { sections: c.sections, cats: c.cats, load: c.load, empty: c.empty };
 
     function pick(cat, b) {
@@ -210,7 +218,7 @@
       });
     }
     function add(cat) {
-      var b = h('div', 'cat f', cat.name); b.dir = 'auto';
+      var b = h('div', 'cat f', cat.name); b.dir = 'auto'; b._cat = cat;
       b._act = function () { pick(cat, b); };
       side.appendChild(b); return b;
     }
@@ -245,6 +253,9 @@
       back: function () { if (host.contains(N.cur)) { N.focus(selEl); return true; } },
       show: function () {
         if (!c.reload) { grid.refresh(); return; }
+        if (c.sideKey && c.sideKey() !== sideKey) { sideKey = c.sideKey(); var keep = sel && sel.id; fillSide(src);
+          for (var q = 0; keep && q < side.childNodes.length; q++) if (side.childNodes[q]._cat && side.childNodes[q]._cat.id === keep) { side.childNodes[q]._act(); break; }
+          return; }
         var had = host.contains(N.cur), cat = sel, b = selEl;
         sel = null; if (cat) pick(cat, b);
         if (had) { rootScope.last = b; if (mainActive()) N.focus(b); }
@@ -265,7 +276,11 @@
   };
   BUILD.library = function () {
     var s = Browse({ reload: true, sections: [{ id: 'list', name: t('mylist') }, { id: 'cw', name: t('cw') }], empty: t('hold_any'),
-      load: function (id) { return Promise.resolve(id === 'list' ? L.fav.list(false) : L.prog.list()); } });
+      /* your own lists follow My List and Continue Watching */
+      cats: function () { return Promise.resolve(L.lists.all().map(function (l) { return { id: 'L:' + l.id, name: l.name }; })); },
+      sideKey: function () { return L.lists.all().map(function (l) { return l.id + l.name; }).join('|'); },
+      ctx: function (sel) { return sel && sel.id === 'cw' ? 'cw' : null; },
+      load: function (id) { return Promise.resolve(id === 'list' ? L.fav.list(false) : id === 'cw' ? L.prog.list() : L.lists.items(id.slice(2))); } });
     var show = s.show, n = 0;
     s.show = function () { if (n++ === 0) return; show(); };
     return s;
@@ -456,6 +471,7 @@
           var done = !cur && (L.seen.has(item, ep) || (r.has && (i < r.s || (i === r.s && eps.indexOf(ep) < r.e))));
           L.card.fill(c, { t: 'ep', id: ep.id, n: nm, i: ep.img }, { label: ep.e + '. ' + nm, fb: 'E' + ep.e, noStar: true, noProg: true, pct: done ? 1 : cur && pr.dur ? pr.pos / pr.dur : 0 });
           c.classList.toggle('seen', done); c._onFocus = up;
+          c._long = function () { L.cardMenu(item, c, { ep: 1, title: ep.e + '. ' + nm, play: function () { playEp(i, eps.indexOf(ep), 0); } }); };
         },
         act: function (ep, list, idx) { var cur = pr && pr.ep && String(pr.ep.id) === String(ep.id); playEp(i, idx, cur ? pr.pos : 0); }
       });

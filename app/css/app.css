@@ -292,3 +292,27 @@ svg { display: block; fill: currentColor; }
 .d-move { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transition: transform .3s ease-out; }
 .d-recs { margin-top: 10px; }
 .d-recs h2 { margin-bottom: 0; }
+
+/* long-press card menu */
+.cmenu-ov { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 22; }
+/* dim behind the menu; the held card (a copy) lifts above it; the menu springs out */
+.cm-shade { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; background: rgba(4,6,12,.62); opacity: 0; transition: opacity .25s ease-out; }
+.cmenu-ov.on .cm-shade { opacity: 1; }
+.cm-lift { position: absolute; margin: 0; z-index: 1; transition: transform .38s cubic-bezier(.34,1.4,.64,1); }
+.cmenu, .cask { opacity: 0; transform: scale(.86); transition: opacity .2s ease-out, transform .36s cubic-bezier(.34,1.4,.64,1); }
+.cmenu-ov.on .cmenu, .cmenu-ov.on .cask { opacity: 1; transform: none; }
+.cmenu { z-index: 2; }
+.cmenu, .cask { background: linear-gradient(135deg, rgba(74,92,124,.97), rgba(44,58,86,.97)); }
+#app.dark .cmenu, #app.dark .cask { background: linear-gradient(135deg, rgba(40,36,34,.97), rgba(16,15,15,.97)); }
+.cmenu { position: absolute; width: 500px; padding: 14px; border-radius: 28px; box-shadow: var(--edge), 0 24px 60px rgba(0,0,0,.45); }
+.cm-title { font-size: 21px; font-weight: 600; opacity: .7; padding: 8px 16px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-item { display: flex; align-items: center; height: 60px; padding: 0 18px; border-radius: 18px; font-size: 24px; font-weight: 500; white-space: nowrap; overflow: hidden; transition: transform .12s ease-out; }
+.cm-item svg { width: 24px; height: 24px; flex: none; fill: currentColor; margin-inline-end: 16px; }
+.cm-item span { overflow: hidden; text-overflow: ellipsis; }
+.cm-item.on svg { fill: #9fd3ff; }
+.cm-item.focus { background: #fff; color: var(--ink); transform: scale(1.03); }
+.cm-item.focus svg { fill: var(--ink); }
+.cm-sep { height: 1px; margin: 8px 14px; background: rgba(255,255,255,.18); }
+.cask { position: absolute; left: 610px; top: 330px; width: 700px; padding: 34px 40px 30px; border-radius: 32px; }
+.cask .cm-title { font-size: 30px; opacity: 1; padding: 0 0 22px; }
+.cask .btns { display: flex; margin-top: 8px; }
