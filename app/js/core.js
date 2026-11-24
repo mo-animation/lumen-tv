@@ -194,6 +194,9 @@
       live_fmt: 'Live stream format', update: 'Check for updates', checking: 'Checking…', uptodate: 'Up to date', installing: 'Installing update…', upd_fail: 'Could not check', upd_none: 'No update source set', upd_avail: 'Update available — open Settings',
       refresh: 'Refresh library', refresh_sub: 'Reload channels and titles', refreshing: 'Refreshing…', clear_hist: 'Clear watch history', cleared: 'Cleared',
       signout: 'Sign out', signout_sub: 'Switch provider', version: 'Version',
+      about_note: 'Lumen is a media player. It does not include or provide any channels, movies or series. Add a playlist from a provider you are allowed to use.',
+      tmdb_note: 'This product uses the TMDB API but is not endorsed or certified by TMDB.',
+      setup_note: 'Lumen is a player only and does not provide any content.',
       resume_from: 'Resume from ', start_over: 'Start Over', in_list: 'In My List', trailer: 'Trailer', more_like: 'More Like This', m_add_fav: 'Add to My List', m_rm_fav: 'Remove from My List', m_new_list: 'New List…', m_in: 'In ', m_add_to: 'Add to ', m_rm_cw: 'Remove from Continue Watching', m_rm_cw_done: 'Removed from Continue Watching', m_from_start: 'Play from the Beginning', m_list_name: 'List name', m_create: 'Create', m_created: 'List created: ', m_added_to: 'Added to ', m_removed_from: 'Removed from ', m_cancel: 'Cancel', season: 'Season ', episode: 'Episode ', no_eps: 'No episodes available', cast: 'Cast: ',
       added: 'Added to My List', removed: 'Removed from My List', exit_again: 'Press Back again to exit', no_yt: 'Could not open YouTube', tr_sound: 'Press OK for sound', tr_hint: 'OK pause · ◀ ▶ 10s · Back close',
       s_title: 'Connect your provider', s_text: 'Enter your Xtream Codes server with username and password, or paste an M3U playlist link and leave the other two fields empty.',
@@ -217,6 +220,9 @@
       live_fmt: 'صيغة البث المباشر', update: 'البحث عن تحديثات', checking: 'جاري البحث…', uptodate: 'أحدث إصدار', installing: 'جاري تثبيت التحديث…', upd_fail: 'تعذّر البحث', upd_none: 'مصدر التحديث غير محدد', upd_avail: 'يوجد تحديث — افتح الإعدادات',
       refresh: 'تحديث المكتبة', refresh_sub: 'إعادة تحميل القنوات والعناوين', refreshing: 'جاري التحديث…', clear_hist: 'مسح سجل المشاهدة', cleared: 'تم المسح',
       signout: 'تسجيل الخروج', signout_sub: 'تغيير المزوّد', version: 'الإصدار',
+      about_note: 'Lumen مشغّل وسائط فقط، ولا يتضمّن أو يوفّر أي قنوات أو أفلام أو مسلسلات. أضف قائمة تشغيل من مزوّد مسموح لك باستخدامه.',
+      tmdb_note: 'يستخدم هذا المنتج واجهة TMDB البرمجية، لكنه غير معتمد أو موثّق من TMDB.',
+      setup_note: 'Lumen مشغّل فقط ولا يوفّر أي محتوى.',
       resume_from: 'متابعة من ', start_over: 'من البداية', in_list: 'في قائمتي', trailer: 'تريلر', more_like: 'أعمال مشابهة', m_add_fav: 'إضافة إلى قائمتي', m_rm_fav: 'إزالة من قائمتي', m_new_list: 'قائمة جديدة…', m_in: 'موجود في ', m_add_to: 'إضافة إلى ', m_rm_cw: 'إزالة من متابعة المشاهدة', m_rm_cw_done: 'أُزيل من متابعة المشاهدة', m_from_start: 'تشغيل من البداية', m_list_name: 'اسم القائمة', m_create: 'إنشاء', m_created: 'تم إنشاء القائمة: ', m_added_to: 'أُضيف إلى ', m_removed_from: 'أُزيل من ', m_cancel: 'إلغاء', season: 'الموسم ', episode: 'الحلقة ', no_eps: 'لا توجد حلقات', cast: 'بطولة: ',
       added: 'أُضيف إلى قائمتي', removed: 'أُزيل من قائمتي', exit_again: 'اضغط رجوع مرة أخرى للخروج', no_yt: 'تعذّر فتح يوتيوب', tr_sound: 'اضغط OK لتشغيل الصوت', tr_hint: 'OK إيقاف مؤقت · ◀ ▶ ١٠ ثوانٍ · رجوع للإغلاق',
       s_title: 'اتصل بمزوّد الخدمة', s_text: 'أدخل سيرفر Xtream Codes مع اسم المستخدم وكلمة المرور، أو الصق رابط M3U واترك الحقلين الآخرين فارغين.',
@@ -248,6 +254,7 @@
   }
   /* turn each platform's remote codes into the app's own codes */
   L.mapKey = function (k) {
+    var K = L.K;   /* without this, Samsung's Return, channel and play/pause keys threw an error */
     switch (k) {
       case 10009: case 27: return K.BACK;              /* Samsung Return, Esc */
       case 427: return K.CHUP; case 428: return K.CHDN; /* Samsung channel keys */
@@ -262,12 +269,20 @@
     } catch (e) { }
     window.close();
   };
+  /* LG Content Store build (tools/store.js sets LUMEN_STORE): no over-the-air updates, no Developer Mode
+     renewal, and Back on the first screen goes straight to the TV's Home screen, as LG's QA requires. */
+  L.storeBuild = !!window.LUMEN_STORE;
+  L.appName = L.storeBuild ? 'Lumen Player' : 'Lumen';
+  L.toHome = function () {
+    try { if (window.PalmSystem && window.PalmSystem.platformBack) return window.PalmSystem.platformBack(); } catch (e) { }
+    L.exit();
+  };
 
   /* LG Developer Mode turns itself off (and deletes Lumen) when its ~50-hour session runs out.
      The installer hands Lumen the TV's session token at launch; Lumen renews the session whenever it is
      opened or comes back on screen, so as long as Lumen is used every couple of days it never expires. */
   (function () {
-    if (L.platform !== 'webos') return;
+    if (L.platform !== 'webos' || L.storeBuild) return;
     function take(raw) {
       try { var p = typeof raw === 'string' ? JSON.parse(raw || '{}') : (raw || {}); if (p.lmDevToken) S.set('devtok', String(p.lmDevToken)); } catch (e) { }
     }

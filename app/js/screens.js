@@ -19,7 +19,9 @@
   window.addEventListener('resize', fit); fit();
   var toast = h('div'); toast.id = 'toast'; app.appendChild(toast);
   function noop() { }
-  function brand() { return h('div', 'brand', [h('i'), h('span', '', 'lumen')]); }
+  /* the LG Content Store version is called "Lumen Player" (another store app is already named Lumen) */
+  function brand() { return h('div', 'brand', [h('i'), h('span', '', 'lumen'), L.storeBuild ? h('em', '', 'player') : null]); }
+  function named(k) { return t(k).replace('Lumen', L.appName); }
 
   function topLayer() { return A.layers[A.layers.length - 1]; }
   function onShow() { if (topLayer() === main && A.mode && A.tabs[A.tab] && A.tabs[A.tab].show) A.tabs[A.tab].show(); }
@@ -77,7 +79,8 @@
     rootScope = {
       root: main, onBack: function () {
         if (!A.mode) {
-          if (Date.now() - exitT < 2500) L.exit();
+          if (L.storeBuild) L.toHome();
+          else if (Date.now() - exitT < 2500) L.exit();
           else { exitT = Date.now(); L.toast(t('exit_again')); }
         } else if (!nav.contains(N.cur)) { var s = A.tabs[A.tab]; if (s.back && s.back()) return; N.focus(btn[A.tab]); }
         else A.home();
@@ -339,7 +342,7 @@
 
   /* ================= updates (over the air, from the GitHub repo) ================= */
   function updUrl(file) {
-    var c = window.LUMEN_CFG || {}; if (!c.repo) return null;
+    var c = window.LUMEN_CFG || {}; if (!c.repo || L.storeBuild) return null;
     return 'https://raw.githubusercontent.com/' + c.repo + '/' + (c.branch || 'main') + '/update/' + file + '?t=' + Date.now();
   }
   function running() { return (window.LUMEN && window.LUMEN.build) || 0; }
@@ -405,13 +408,16 @@
     row(t('live_fmt'), L.store.get('fmt', 'm3u8') === 'ts' ? 'MPEG-TS' : 'HLS', function (v) {
       var n = L.store.get('fmt', 'm3u8') === 'ts' ? 'm3u8' : 'ts'; L.store.set('fmt', n); v.textContent = n === 'ts' ? 'MPEG-TS' : 'HLS';
     });
-    row(t('update'), (window.LUMEN && window.LUMEN.version) || '', checkUpdate);
+    if (L.storeBuild) row(t('version'), (window.LUMEN && window.LUMEN.version) || '');
+    else row(t('update'), (window.LUMEN && window.LUMEN.version) || '', checkUpdate);
     row(t('refresh'), t('refresh_sub'), function (v) { v.textContent = t('refreshing'); L.cache.clear().then(function () { location.reload(); }); });
     row(t('clear_hist'), '', function (v) { L.prog.clear(); v.textContent = t('cleared'); });
     row(t('signout'), t('signout_sub'), function () {
       L.store.del('profile'); L.store.del('fav'); L.store.del('prog');
       L.cache.clear().then(function () { location.reload(); });
     });
+    /* footnote: Lumen brings no content of its own, and TMDB's required credit */
+    el.appendChild(h('div', 'set-note', [h('p', '', named('about_note')), h('div', 'set-tmdb', [h('i', 'tmdb-logo'), h('span', '', t('tmdb_note'))])]));
     return { el: el, first: function () { return list.firstChild; } };
   };
 
@@ -526,8 +532,9 @@
     var el = h('div', 'layer'), msg = h('div', 'setup-msg');
     function inp(ph) { var i = h('input', 'inp f'); i.placeholder = ph; i.type = 'text'; i.autocomplete = 'off'; i.spellcheck = false; i._act = function () { i.focus(); }; return i; }
     var url = inp(t('s_url')), user = inp(t('s_user')), pass = inp(t('s_pass'));
+    pass.type = 'password';
     var go1 = h('div', 'btn f', t('connect')), demo = h('div', 'btn f', t('demo')), lang = h('div', 'btn f', L.rtl ? 'English' : 'العربية');
-    el.appendChild(h('div', 'setup-card glass fg', [brand(), h('h1', '', t('s_title')), h('p', '', t('s_text')), url, user, pass, h('div', 'btns', [go1, demo, lang]), msg]));
+    el.appendChild(h('div', 'setup-card glass fg', [brand(), h('h1', '', t('s_title')), h('p', '', t('s_text')), url, user, pass, h('div', 'btns', [go1, demo, lang]), msg, h('div', 'setup-note', named('setup_note'))]));
     function start(p) {
       msg.textContent = t('connecting');
       D.init(p);
@@ -546,7 +553,7 @@
     demo._act = function () { start({ type: 'demo' }); };
     lang._act = function () { L.store.set('lang', L.rtl ? 'en' : 'ar'); location.reload(); };
     app.appendChild(el); A.layers = [el];
-    N.scopes = [{ root: el, onBack: function () { } }];
+    N.scopes = [{ root: el, onBack: function () { if (L.storeBuild) L.toHome(); } }];
     N.focus(url);
   }
 

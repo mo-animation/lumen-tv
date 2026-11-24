@@ -5,6 +5,8 @@
   var base = window.LUMEN_BUILD || { build: 0, version: '0' }, up = null;
   try { up = JSON.parse(localStorage.getItem('lm.update') || 'null'); } catch (e) { up = null; }
   try {
+    /* the LG Content Store build only runs its own reviewed code: no over-the-air updates */
+    if (window.LUMEN_STORE && up) { localStorage.removeItem('lm.update'); up = null; }
     if (up && (!(up.build > base.build) || localStorage.getItem('lm.booting') === '1')) { localStorage.removeItem('lm.update'); up = null; }
     localStorage.removeItem('lm.booting');
   } catch (e) { up = null; }
